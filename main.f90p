@@ -1,0 +1,158 @@
+! find the band gap weighted by each exciton states
+! Eg^S=sum_cvk((A_cvk^S)^2*(Eck-Evk))
+
+program bsevector
+  use typedefs
+  use nrtype
+  implicit none
+  integer :: ns, nv, nc, nk, nmat, ie, imat, ik, ic, iv, is, il
+#ifdef CPLX
+  complex(dpc), allocatable :: Aread(:) ! nmat
+#else
+  real(dp), allocatable :: Aread(:)! nmat
+#endif
+  real(dp), allocatable :: Asum(:,:,:,:) ! j%nv, j%nc, j%nk, j%ne
+  real(dp), allocatable :: energy(:), dipole(:), epsout(:), epsoutsum(:)
+  real(dp), allocatable :: kk(:,:)
+  real(dp) :: x, s, tmp_energy, factor, tmp_dipole
+  type(joblist) :: jobs
+  integer :: ierr
+  character(len=80) :: filename
+
+  open(unit=881,file="out.dat",status="replace")
+
+  call readin(jobs)
+  write(881,*) "reading file eigenvectors"
+  open(unit=10,file="eigenvectors",form='unformatted',status='old')
+
+
+  read(10) ns
+  read(10) nv
+  read(10) nc
+  read(10) nk
+  nmat=ns*nv*nc*nk
+
+  write(881,'(a,i0)') " ns = ", ns
+  write(881,'(a,i0)') " nv = ", nv
+  write(881,'(a,i0)') " nc = ", nc
+  write(881,'(a,i0)') " nk = ", nk
+  write(881,'(a,i0)') " nmat = ", nmat
+
+  allocate(Aread(nmat))
+  allocate(kk(3,nk))
+  allocate(Asum(nv,nc,nk,jobs%ne))
+  allocate(energy(jobs%ne))
+#ifdef CPLX
+  Asum=(0.d0,0.d0)
+#else
+  Asum=0.d0
+#endif
+  read(10) kk(:,:) ! kpoints
+  write(881,"(a)") " klist: "
+  do ik = 1, nk
+    write(881,'(3(f10.6))')kk(:,ik)
+  enddo
+
+  write(881,*) 
+  do ie = 1, jobs%ne
+    read(10) energy(ie)
+    read(10) Aread(:)
+    imat = 0
+    do ik = 1, nk
+      do ic = 1, nc
+        do iv = 1, nv
+          do is = 1, ns
+            imat=ik-1
+            imat=imat*nc+ic-1
+            imat=imat*nv+iv-1
+            imat=imat*ns+is ! -1+1
+#ifdef CPLX
+            Asum(iv,ic,ik,ie) = Asum(iv,ic,ik,ie) + Aread(imat) * conjg(Aread(imat))
+#else
+            Asum(iv,ic,ik,ie) = Asum(iv,ic,ik,ie) + Aread(imat) **2
+#endif
+!            A(is,iv,ic,ik) = Aread(imat)
+          enddo ! is
+        enddo ! iv
+      enddo ! ic
+    enddo ! ik
+
+  enddo ! ie
+
+  deallocate(Aread)
+  close(10)
+ 
+  write(881,*) 
+  write(881,*) "reading eigenvalues.dat"
+   
+  allocate(dipole(jobs%ne))
+  open(unit=12,file="eigenvalues.dat",form="formatted",status="old")
+  do il = 1,4
+    read(12,*)
+  enddo ! il
+  do ie = 1, jobs%ne
+    read(12,*) tmp_energy, dipole(ie), tmp_dipole
+!    if (tmp_energy.ne.energy(ie)) then
+!      call die("energy doesn't match")
+!    endif
+  enddo ! ie
+  close(12)
+
+
+
+  do ie = 1, jobs%ne
+    write(881,"(i6, f9.5)") ie, energy(ie)
+  enddo
+  write(881,*) 
+  write(881,*) "Done"
+  close(881)
+endprogram bsevector
+
+subroutine date_time(bdate,btime)
+  ! returns:
+  ! - bdate: string with date
+  ! - btime: string with time
+  character(len=11), intent(out) :: bdate
+  character(len=14), intent(out) :: btime
+  !
+  integer :: lmonth
+  integer :: idate(8)
+  character(len=10) :: atime
+  character(len=8) :: adate
+  character(len=5) :: azone
+  character(len=4) :: year
+  character(len=3) :: month(12)
+  character(len=2) :: hour, min, sec, day
+  !
+  DATA month/'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep', &
+       'Oct','Nov','Dec'/
+  !
+
+  call date_and_time(adate,atime,azone,idate)
+  read(adate,"(a4,i2,a2)") year, lmonth, day
+  write(bdate,"(a2,a1,a3,a1,a4)") day, '-', month(lmonth), '-', year
+  read(atime,'(a2,a2,a2,a4)') hour, min, sec
+  write(btime,"(a2,a1,a2,a1,a2,1x,a5)") hour, ':', min, ':', sec, azone
+  !
+  return
+end subroutine date_time
+
+
+subroutine die(str,id_cpu)
+!  use mpi
+  implicit none
+  character (len=*) :: str
+  integer :: ierr
+  integer, intent(In), optional :: id_cpu
+
+  write(*,*)
+  write(*,*) "Stop! ERROR in: ", Trim(str)
+  if (present(id_cpu)) write(*,*) "At cpu",id_cpu
+  write(*,*)
+  stop
+!  call MPI_Abort(MPI_COMM_WORLD, 0, ierr)
+
+endsubroutine die
+
+
+

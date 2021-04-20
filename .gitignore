@@ -1,0 +1,10 @@
+#excutable
+*.x
+*.o
+
+#tar
+*.tar
+*.tar.gz
+
+#example
+example

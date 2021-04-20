@@ -1,0 +1,24 @@
+This tool calculate the band gap weighted by each exciton states.
+Eg^S=sum_cvk((A_cvk^S)^2*(Eck-Evk))
+
+########################################
+
+Input file: 
+input
+eigenvectors (from bse absorption)
+eqp.dat and eqp_q.dat
+(a shifted grid is assumed here)
+
+output files:
+out.dat
+
+########################################
+
+Install :
+
+Modify mkf.mk then 
+make
+
+########################################
+
+ZT
