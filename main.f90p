@@ -1,23 +1,27 @@
 ! find the band gap weighted by each exciton states
-! Eg^S=sum_cvk((A_cvk^S)^2*(Eck-Evk))
+! Eg^S=sum_cvk((A_cvk^S)^2*(Eck-Evk+q))
 
 program bsevector
   use typedefs
   use nrtype
   implicit none
-  integer :: ns, nv, nc, nk, nmat, ie, imat, ik, ic, iv, is, il
+  integer :: ns, nv, nc, nk, nmat, ie, imat, ik, ic, iv, is, ik1, ik2
+  integer :: tmp_n
 #ifdef CPLX
   complex(dpc), allocatable :: Aread(:) ! nmat
 #else
   real(dp), allocatable :: Aread(:)! nmat
 #endif
-  real(dp), allocatable :: Asum(:,:,:,:) ! j%nv, j%nc, j%nk, j%ne
-  real(dp), allocatable :: energy(:), dipole(:), epsout(:), epsoutsum(:)
+  real(dp), allocatable :: Avcke(:,:,:,:) ! nv, nc, nk, j%ne
+  real(dp), allocatable :: energy(:) ,Egap(:), Eb(:), Asum(:)! j%ne
+  real(dp), allocatable :: Ec(:,:) ! nc, nk
+  real(dp), allocatable :: Ev(:,:) ! nv, nk
   real(dp), allocatable :: kk(:,:)
-  real(dp) :: x, s, tmp_energy, factor, tmp_dipole
+  real(dp) :: tmp_kk(3), kshift(3)
   type(joblist) :: jobs
   integer :: ierr
   character(len=80) :: filename
+  character(len=80) :: something
 
   open(unit=881,file="out.dat",status="replace")
 
@@ -40,18 +44,15 @@ program bsevector
 
   allocate(Aread(nmat))
   allocate(kk(3,nk))
-  allocate(Asum(nv,nc,nk,jobs%ne))
+  allocate(Avcke(nv,nc,nk,jobs%ne))
   allocate(energy(jobs%ne))
+  allocate(Asum(jobs%ne))
 #ifdef CPLX
-  Asum=(0.d0,0.d0)
+  Avcke=(0.d0,0.d0)
 #else
-  Asum=0.d0
+  Avcke=0.d0
 #endif
   read(10) kk(:,:) ! kpoints
-  write(881,"(a)") " klist: "
-  do ik = 1, nk
-    write(881,'(3(f10.6))')kk(:,ik)
-  enddo
 
   write(881,*) 
   do ie = 1, jobs%ne
@@ -67,42 +68,148 @@ program bsevector
             imat=imat*nv+iv-1
             imat=imat*ns+is ! -1+1
 #ifdef CPLX
-            Asum(iv,ic,ik,ie) = Asum(iv,ic,ik,ie) + Aread(imat) * conjg(Aread(imat))
+            Avcke(iv,ic,ik,ie) = Aread(imat) * conjg(Aread(imat))
 #else
-            Asum(iv,ic,ik,ie) = Asum(iv,ic,ik,ie) + Aread(imat) **2
+            Avcke(iv,ic,ik,ie) = Aread(imat) **2
 #endif
 !            A(is,iv,ic,ik) = Aread(imat)
+            Asum(ie)=Asum(ie)+Avcke(iv,ic,ik,ie)
           enddo ! is
         enddo ! iv
       enddo ! ic
     enddo ! ik
 
   enddo ! ie
-
-  deallocate(Aread)
   close(10)
- 
-  write(881,*) 
-  write(881,*) "reading eigenvalues.dat"
-   
-  allocate(dipole(jobs%ne))
-  open(unit=12,file="eigenvalues.dat",form="formatted",status="old")
-  do il = 1,4
-    read(12,*)
-  enddo ! il
+  deallocate(Aread)
+
+  write(881,*)"AvckS normalization check"
   do ie = 1, jobs%ne
-    read(12,*) tmp_energy, dipole(ie), tmp_dipole
-!    if (tmp_energy.ne.energy(ie)) then
-!      call die("energy doesn't match")
-!    endif
+    write(881,"(i5,f9.5)") ie,Asum(ie)
   enddo ! ie
-  close(12)
+  deallocate(Asum)
+
+ 
+!  write(881,*) 
+!  write(881,*) "reading eigenvalues.dat"
+!   
+!  allocate(dipole(jobs%ne))
+!  open(unit=12,file="eigenvalues.dat",form="formatted",status="old")
+!  do il = 1,4
+!    read(12,*)
+!  enddo ! il
+!  do ie = 1, jobs%ne
+!    read(12,*) tmp_energy, dipole(ie), tmp_dipole
+!!    if (tmp_energy.ne.energy(ie)) then
+!!      call die("energy doesn't match")
+!!    endif
+!  enddo ! ie
+!  close(12)
+
+  write(881,*)
+  write(881,*) "reading file eqp.dat for Eck"
+  open(unit=13,file="eqp.dat",form="formatted",status="old")
+  allocate(Ec(nc,nk))
+  do ik = 1, nk
+    read(13,*)tmp_kk(:), tmp_n
+    if (Sum(Dabs(kk(:,ik)-tmp_kk))>1.d-6) then
+      Call die("k points of eigenvectors and eqp.dat doesn`t match")
+    endif
+    if (nc>tmp_n) then
+      Call die("more conduction bands in eigenvectors than eqp.dat")
+    endif
+    do ic = 1, nc
+      read(13,*) something, something, something, Ec(ic,ik)
+    enddo ! ic
+    do ic = nc+1, tmp_n, 1
+      read(13,*) ! padding to tmpnc
+    enddo ! ic
+  enddo ! ik
+  close(13)
+
+  
+  write(881,*)
+  write(881,*) "reading file eqp_q.dat for Evk"
+  open(unit=14,file="eqp_q.dat",form="formatted",status="old")
+  allocate(Ev(nv,nk))
+  do ik = 1, nk
+    read(14,*)tmp_kk(:), tmp_n
+    if (ik==1) then
+      ik2=1
+      kshift=tmp_kk-kk(:,1)
+      write(881,'(a,3f9.5)') " kshift = ", kshift
+    else ! ik/=1
+      ik2=0
+      do ik1=2, nk
+        if (Sum(Dabs(kk(:,ik1)+kshift-tmp_kk))<1.d-6) then
+          ik2=ik1
+          exit
+        endif
+      enddo
+      if (ik2==0) then
+        Call die("k points of eigenvectors and eqp_q.dat doesn`t match")
+      endif
+    endif ! ik==1
+    if (nv>tmp_n) then
+      Call die("more valence bands in eigenvectors than eqp_q.dat")
+    endif
+    do iv = nv+1, tmp_n, 1
+      read(14,*) ! padding to tmp_n
+    enddo ! iv
+    do iv = nv, 1, -1
+      read(14,*) something, something, something, Ev(iv,ik2)
+    enddo ! iv
+  enddo ! ik
+  close(14)
 
 
 
-  do ie = 1, jobs%ne
-    write(881,"(i6, f9.5)") ie, energy(ie)
+  write(881,"(a)") " klist: "
+  do ik = 1, nk
+    write(881,'(i6,3(f10.6))')ik,kk(:,ik)
+    write(881,*) "   Ev:"
+    do iv = nv, 1, -1
+      write(881,'(f18.9)')Ev(iv,ik)
+    enddo
+    write(881,*) "   Ec:"
+    do ic = 1, nc
+      write(881,'(f18.9)')Ec(ic,ik)
+    enddo
   enddo
+
+
+  allocate(Egap(jobs%ne))
+  allocate(Eb(jobs%ne))
+#ifdef CPLX
+  Egap=(0.d0,0.d0)
+#else
+  Egap=0.d0
+#endif
+  do ie = 1, jobs%ne
+    do ik = 1, nk
+      do ic = 1, nc
+        do iv = 1, nv
+          Egap(ie)=Egap(ie)+Avcke(iv,ic,ik,ie)*(Ec(ic,ik)-Ev(iv,ik))
+        enddo ! iv
+      enddo ! ic
+    enddo ! ik
+  enddo ! ie
+
+  Eb=Egap-energy
+  open(unit=15,file="energy.dat",status="replace")
+  write(15,*) "exciton Eexciton(eV) Egap(eV) Ebinding(eV)"
+  do ie = 1, jobs%ne
+    write(15,"(i5, 3f9.5)") ie, energy(ie), Egap(ie), Eb(ie)
+  enddo
+  close(15)
+
+  deallocate(Eb)
+  deallocate(Egap)
+  deallocate(Ev)
+  deallocate(Ec)
+  deallocate(kk)
+  deallocate(Avcke)
+  deallocate(energy)
   write(881,*) 
   write(881,*) "Done"
   close(881)
@@ -138,16 +245,16 @@ subroutine date_time(bdate,btime)
 end subroutine date_time
 
 
-subroutine die(str,id_cpu)
+subroutine die(str)!,id_cpu)
 !  use mpi
   implicit none
   character (len=*) :: str
   integer :: ierr
-  integer, intent(In), optional :: id_cpu
+!  integer, intent(In), optional :: id_cpu
 
   write(*,*)
   write(*,*) "Stop! ERROR in: ", Trim(str)
-  if (present(id_cpu)) write(*,*) "At cpu",id_cpu
+!  if (present(id_cpu)) write(*,*) "At cpu",id_cpu
   write(*,*)
   stop
 !  call MPI_Abort(MPI_COMM_WORLD, 0, ierr)
