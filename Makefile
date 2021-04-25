@@ -1,7 +1,7 @@
 include mkf.mk
 include flavor.mk
 
-SRC	:= main.f90 readin.f90
+SRC	:= ebg.f90 readin.f90
 MODULE := typedefs.o nrtype.o
 OBJ	:= $(SRC:.f90=.o) 
 

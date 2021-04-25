@@ -5,17 +5,9 @@ module typedefs
 !---------------------------
 
   type joblist
-    integer :: nc
-    integer :: nv
-    integer :: nk
     integer :: ne
-    integer, pointer :: clist(:)
-    integer, pointer :: vlist(:)
-    integer, pointer :: klist(:)
-    real(dp) :: sigma
-    real(dp), pointer :: edos(:)
-    integer :: nedos
-    real(dp) :: emax
+    logical :: lwbands
+    logical :: lwkpoints
   endtype
 
 !---------------------------
