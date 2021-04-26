@@ -2,7 +2,7 @@ subroutine readin(jobs)
   use typedefs
   use nrtype
   implicit None
-  integer :: info, ierr
+  integer :: info, ierr, ieh
   character(len=80) :: line, keyword
   type(joblist), intent(out) :: jobs
 
@@ -12,6 +12,9 @@ subroutine readin(jobs)
 ! Default value
   jobs%ne = 0
   jobs%lwbands = .false.
+  jobs%lwkpoints = .true.
+  jobs%nwstates = 0
+  jobs%sigma = 0.05
 
   open(unit = 101, file='input' , form ='formatted')
 ! do a loop thru input till the end of file
@@ -39,6 +42,17 @@ subroutine readin(jobs)
     elseif(trim(keyword).eq.'lwkpoints') then
       read(line,*,iostat=ierr)  jobs%lwkpoints
 
+    elseif(trim(keyword).eq.'nwstates') then
+      read(line,*,iostat=ierr) jobs%nwstates
+      allocate(jobs%iwstates(jobs%nwstates))
+      jobs%iwstates=0
+
+    elseif(trim(keyword).eq.'iwstates') then
+      read(line,*,iostat=ierr) jobs%iwstates
+
+    elseif(trim(keyword).eq.'sigma') then
+      read(line,*,iostat=ierr) jobs%sigma
+
     else
       write(881,*) 'ERROR: Unexpected keyword ', trim(keyword), ' was found in input.'
       call die("Unexpected keyword "//trim(keyword)//" found in input",0)
@@ -51,10 +65,18 @@ subroutine readin(jobs)
       
   enddo
 
-
-  write(881,'(a,i0)') " ne = ", jobs%ne
+  if (jobs%ne /= 0) then
+    write(881,'(a,i0)') " ne = ", jobs%ne
+  endif
   write(881,'(a,l1)') " lwbands = ", jobs%lwbands
   write(881,'(a,l1)') " lwkpoints = ", jobs%lwkpoints
-  
+  if (jobs%nwstates .ne. 0) then
+    write(881,'(a,i0)') " nwstates = ", jobs%nwstates
+    write(881,'(a)') " iwstates = "
+    do ieh = 1, jobs%nwstates
+      write(881,'(i6)') jobs%iwstates(ieh)
+    enddo ! ieh
+    write(881,'(a,f7.5)') " sigma = ", jobs%sigma
+  endif
 
 endsubroutine readin

@@ -1,11 +1,11 @@
-! find the band gap weighted by each exciton states
-! Eg^S=sum_cvk((A_cvk^S)^2*(Eck-Evk+q))
+! calculate joint density of state of exciton states
+! gS(w)=sum_vck(AvckS^2*delta(Eck-Evk-Ew))
 
-program ehbandgap
+program jdos
   use typedefs
   use nrtype
   implicit none
-  integer :: ns, nv, nc, nk, nmat, ie, imat, ik, ic, iv, is, ik1, ik2
+  integer :: ns, nv, nc, nk, nmat, ie, imat, ik, ic, iv, is, ik1, ik2, ij
   integer :: tmp_n
 #ifdef CPLX
   complex(dpc), allocatable :: Aread(:) ! nmat
@@ -13,10 +13,12 @@ program ehbandgap
   real(dp), allocatable :: Aread(:)! nmat
 #endif
 !  real(dp), allocatable :: Avcke(:,:,:,:) ! nv, nc, nk, j%ne
-  real(dp), allocatable :: energy(:) ,Egap(:), Eb(:), Asum(:)! j%ne
+  real(dp), allocatable :: energy(:), Asum(:)! j%ne
+  logical, allocatable :: lwdos(:) ! j%ne
   real(dp), allocatable :: Ec(:,:) ! nc, nk
   real(dp), allocatable :: Ev(:,:) ! nv, nk
   real(dp), allocatable :: kk(:,:)
+  real(dp), allocatable :: fjdos(:), ejdos(:) ! nj=1000
   real(dp) :: tmp_kk(3), kshift(3), Avcke
   type(joblist) :: jobs
   integer :: ierr
@@ -31,14 +33,26 @@ program ehbandgap
 
 
   call readin(jobs)
-
-  if (jobs%ne==0) then
-    call die("ne=0. need input")
+  if (jobs%nwstates==0) then
+    call die("jobs%nwstates=0. need input")
   endif
+  jobs%ne=maxval(jobs%iwstates)
+  
+  write(881,'(a)') " change ne to max(iwstates) "
+  write(881,'(a,i0)') " ne = ", jobs%ne
+
+  allocate(lwdos(jobs%ne))
+  lwdos=.false.
+  do ij =1, jobs%nwstates
+    lwdos(jobs%iwstates(ij))=.true.
+  enddo ! ij
+    
 
   write(881,*)
   write(881,*) "reading file eigenvectors headers"
   open(unit=10,file="eigenvectors",form='unformatted',status='old')
+
+
   read(10) ns
   read(10) nv
   read(10) nc
@@ -143,18 +157,22 @@ program ehbandgap
 !  allocate(Avcke(nv,nc,nk,jobs%ne))
   allocate(energy(jobs%ne))
   allocate(Asum(jobs%ne))
-  allocate(Egap(jobs%ne))
-  allocate(Eb(jobs%ne))
+  allocate(fjdos(1000))
+  allocate(ejdos(1000))
+
+  do ij = 1, 1000
+    ejdos(ij)=dble(ij-1)*1.d-2
+  enddo ! ij
+
   Asum=0.d0
-#ifdef CPLX
-  Egap=(0.d0,0.d0)
-!  Avcke=(0.d0,0.d0)
-#else
-!  Avcke=0.d0
-  Egap=0.d0
-#endif
 
   do ie = 1, jobs%ne
+    if (lwdos(ie)==.false.) then
+      read(10) ! energy(ie)
+      read(10) ! Aread(:)
+      cycle
+    endif
+    fjdos=0.d0
     read(10) energy(ie)
     read(10) Aread(:)
     imat = 0
@@ -171,14 +189,24 @@ program ehbandgap
 #else
             Avcke = Aread(imat) **2
 #endif
-            Egap(ie)=Egap(ie)+Avcke*(Ec(ic,ik)-Ev(iv,ik))
             Asum(ie)=Asum(ie)+Avcke
+            
+            do ij = 1, 1000
+!              xx=Ec(ic,ik)-Ev(iv,ik)-ejdos
+              fjdos(ij)=fjdos(ij)+Avcke*0.3989422804014326779399/jobs%sigma*exp(-0.5*((Ec(ic,ik)-Ev(iv,ik)-ejdos(ij))/jobs%sigma)**2)
+            enddo ! ij
           enddo ! is
         enddo ! iv
       enddo ! ic
     enddo ! ik
 
+    write(filename,'(a,i0,a)') "ehdos_",ie,".dat"
+    open(unit=16,file=filename,form="formatted",status="replace")
+    do ij = 1, 1000
+      write(16,'(f6.2,f18.9)') ejdos(ij), fjdos(ij)
+    enddo ! ij
   enddo ! ie
+
   close(10)
   deallocate(Aread)
 
@@ -194,16 +222,7 @@ program ehbandgap
   deallocate(Asum)
 
 
-  Eb=Egap-energy
-  open(unit=15,file="energy.dat",status="replace")
-  write(15,*) "exciton Eexciton(eV) Egap(eV) Ebinding(eV)"
-  do ie = 1, jobs%ne
-    write(15,"(i6, 3f9.5)") ie, energy(ie), Egap(ie), Eb(ie)
-  enddo
-  close(15)
 
-  deallocate(Eb)
-  deallocate(Egap)
   deallocate(Ev)
   deallocate(Ec)
   deallocate(kk)
@@ -212,7 +231,7 @@ program ehbandgap
   write(881,*) 
   call date_time(cdate, ctime)
   write(881,'(a,a11,1x,a14)') " End Time: ", cdate, ctime
-endprogram ehbandgap
+endprogram jdos
 
 subroutine date_time(bdate,btime)
   ! returns:

@@ -1,12 +1,15 @@
 include mkf.mk
 include flavor.mk
 
-SRC	:= ebg.f90 readin.f90
-MODULE := typedefs.o nrtype.o
-OBJ	:= $(SRC:.f90=.o) 
-
-
 default: all
+
+include make_deps.mk
+
+#SRC	:= readin.f90
+#MODULE := typedefs.o nrtype.o
+#OBJ	:= $(SRC:.f90=.o) 
+
+
 all: 
 	make clean
 	make real
@@ -15,18 +18,20 @@ all:
 	make clean
 real:
 	cp flavor_real.mk flavor.mk
-	make module
-	make obj
-	$(LINK) $(FOPTS) -o ebg.real.x $(OBJ) $(LIBS)
+#	make module
+#	make obj
+	make ebg.real.x
+	make jdos.real.x
 cplx:
 	cp flavor_cplx.mk flavor.mk
-	make module
-	make obj
-	$(LINK) $(FOPTS) -o ebg.cplx.x $(OBJ) $(LIBS)
+#	make module
+#	make obj
+	make ebg.cplx.x
+	make jdos.cplx.x
 
 .SUFFIXES: .f90p .f90 $(SUFFIXES)
 module:
-	make nrtype.o $(MODULE)
+	make $(MODULE)
 obj:
 	make $(OBJ)
 
@@ -37,6 +42,12 @@ obj:
 	$(FPP) $(DEFS) $(TYPEFLAG) $< > $*.p.f90
 	$(F90) -c $(FOPTS) $*.p.f90 $(LIBS)
 	mv $*.p.o $*.o
+
+	
+%.x:
+	$(LINK) $(FOPTS) -o $@ $^ $(LIBS)
+
+
 
 clean:
 	rm -f *.o *.mod *.p.f90
