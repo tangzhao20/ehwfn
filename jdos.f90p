@@ -5,8 +5,7 @@ program jdos
   use typedefs
   use nrtype
   implicit none
-  integer :: ns, nv, nc, nk, nmat, ie, imat, ik, ic, iv, is, ik1, ik2, ij
-  integer :: tmp_n
+  integer :: ns, nv, nc, nk, nmat, ie, imat, ik, ic, iv, is, ij
 #ifdef CPLX
   complex(dpc), allocatable :: Aread(:) ! nmat
 #else
@@ -19,11 +18,10 @@ program jdos
   real(dp), allocatable :: Ev(:,:) ! nv, nk
   real(dp), allocatable :: kk(:,:)
   real(dp), allocatable :: fjdos(:), ejdos(:) ! nj=1000
-  real(dp) :: tmp_kk(3), kshift(3), Avcke
+  real(dp) :: Avcke
   type(joblist) :: jobs
   integer :: ierr
   character(len=80) :: filename
-  character(len=80) :: something
   character(len=11) :: cdate
   character(len=14) :: ctime
 
@@ -68,87 +66,9 @@ program jdos
   allocate(kk(3,nk))
   read(10) kk(:,:) ! kpoints
 
-  write(881,*)
-  write(881,*) "reading file eqp.dat for Eck"
-  open(unit=13,file="eqp.dat",form="formatted",status="old")
   allocate(Ec(nc,nk))
-  do ik = 1, nk
-    read(13,*)tmp_kk(:), tmp_n
-    if (Sum(Dabs(kk(:,ik)-tmp_kk))>1.d-6) then
-      Call die("k points of eigenvectors and eqp.dat doesn`t match")
-    endif
-    if (nc>tmp_n) then
-      Call die("more conduction bands in eigenvectors than eqp.dat")
-    endif
-    do ic = 1, nc
-      read(13,*) something, something, something, Ec(ic,ik)
-    enddo ! ic
-    do ic = nc+1, tmp_n, 1
-      read(13,*) ! padding to tmpnc
-    enddo ! ic
-  enddo ! ik
-  close(13)
-
-  
-  write(881,*)
-  write(881,*) "reading file eqp_q.dat for Evk"
-  open(unit=14,file="eqp_q.dat",form="formatted",status="old")
   allocate(Ev(nv,nk))
-  do ik = 1, nk
-    read(14,*)tmp_kk(:), tmp_n
-    if (ik==1) then
-      ik2=1
-      kshift=tmp_kk-kk(:,1)
-      write(881,'(a,3f9.5)') " kshift = ", kshift
-    else ! ik/=1
-      ik2=0
-      do ik1=2, nk
-        if (Sum(Dabs(kk(:,ik1)+kshift-tmp_kk))<1.d-6) then
-          ik2=ik1
-          exit
-        endif
-      enddo
-      if (ik2==0) then
-        Call die("k points of eigenvectors and eqp_q.dat doesn`t match")
-      endif
-    endif ! ik==1
-    if (nv>tmp_n) then
-      Call die("more valence bands in eigenvectors than eqp_q.dat")
-    endif
-    do iv = nv+1, tmp_n, 1
-      read(14,*) ! padding to tmp_n
-    enddo ! iv
-    do iv = nv, 1, -1
-      read(14,*) something, something, something, Ev(iv,ik2)
-    enddo ! iv
-  enddo ! ik
-  close(14)
-
-  if (jobs%lwkpoints .or. jobs%lwkpoints) then
-    write(881,*)
-  endif
-  if (jobs%lwkpoints) then
-    write(881,"(a)") " klist: "
-  endif
-  do ik = 1, nk
-    if (jobs%lwkpoints) then
-      write(881,'(i6,3(f10.6))')ik,kk(:,ik)
-    elseif (jobs%lwbands) then
-      write(881,'(i6)')ik
-    endif
-    if (jobs%lwbands) then
-      write(881,*) "   Ev:"
-      do iv = nv, 1, -1
-        write(881,'(f18.9)')Ev(iv,ik)
-      enddo
-      write(881,*) "   Ec:"
-      do ic = 1, nc
-        write(881,'(f18.9)')Ec(ic,ik)
-      enddo
-    endif
-  enddo
-
-
+  call readeqp(jobs,nv,nc,nk,Ec,Ev,kk)
 
   write(881,*)
   write(881,*) "reading file eigenvectors"
