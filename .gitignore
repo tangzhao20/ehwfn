@@ -6,5 +6,8 @@
 *.tar
 *.tar.gz
 
+#tmp
+*.swp
+
 #example
 example

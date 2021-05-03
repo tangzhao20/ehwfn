@@ -15,6 +15,7 @@ subroutine readin(jobs)
   jobs%lwkpoints = .true.
   jobs%nwstates = 0
   jobs%sigma = 0.05
+  jobs%lsquare = .true.
 
   open(unit = 101, file='input' , form ='formatted')
 ! do a loop thru input till the end of file
@@ -41,6 +42,9 @@ subroutine readin(jobs)
 
     elseif(trim(keyword).eq.'lwkpoints') then
       read(line,*,iostat=ierr)  jobs%lwkpoints
+
+    elseif(trim(keyword).eq.'lsquare') then
+      read(line,*,iostat=ierr)  jobs%lsquare
 
     elseif(trim(keyword).eq.'nwstates') then
       read(line,*,iostat=ierr) jobs%nwstates

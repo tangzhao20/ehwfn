@@ -5,11 +5,6 @@ default: all
 
 include make_deps.mk
 
-#SRC	:= readin.f90
-#MODULE := typedefs.o nrtype.o
-#OBJ	:= $(SRC:.f90=.o) 
-
-
 all: 
 	make clean
 	make real
@@ -18,22 +13,17 @@ all:
 	make clean
 real:
 	cp flavor_real.mk flavor.mk
-#	make module
-#	make obj
 	make ebg.real.x
 	make jdos.real.x
+	make ewfn.real.x
 cplx:
 	cp flavor_cplx.mk flavor.mk
-#	make module
-#	make obj
 	make ebg.cplx.x
 	make jdos.cplx.x
+	make ewfn.cplx.x
 
 .SUFFIXES: .f90p .f90 $(SUFFIXES)
-module:
-	make $(MODULE)
-obj:
-	make $(OBJ)
+
 
 .f90.o:
 	$(F90) -c $(FOPTS) $*.f90 $(LIBS)
