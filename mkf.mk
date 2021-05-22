@@ -4,8 +4,7 @@ F90     = ifort
 F90free = ifort -free
 FPP     = ifort -EP
 
-DEFS  = -DDEBUG
-#DO NOT USE -DCPLX here. Find in flavor.mk
+DEFS  = 
 
 LINK    = ifort
 

@@ -2,6 +2,8 @@
 ! AS_real(k)=sum_vc(real(AvckS))
 ! AS_imag(k)=sum_vc(imag(AvckS))
 
+! input: nwstates, iwstates
+
 program ewfn
   use typedefs
   use nrtype
@@ -142,7 +144,7 @@ program ewfn
     write(filename,'(a,i0,a)') "ewfn_",ie,".dat"
     open(unit=16,file=filename,form="formatted",status="replace")
     if (jobs%lsquare) then
-      write(16,'(a)') " kx ky kz AS^2(k)"
+      write(16,'(a)') "# kx ky kz AS^2(k)"
       do ik = 1, nk
         write(16,'(3f10.6,f18.9)') kk(:,ik), fwfn2(ik)
       enddo ! ik

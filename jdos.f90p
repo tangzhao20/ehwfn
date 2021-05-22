@@ -1,6 +1,8 @@
 ! calculate joint density of state of exciton states
 ! gS(w)=sum_vck(AvckS^2*delta(Eck-Evk-Ew))
 
+! input: nwstates, iwstates
+
 program jdos
   use typedefs
   use nrtype

@@ -1,6 +1,8 @@
 ! find the band gap weighted by each exciton states
 ! Eg^S=sum_cvk((A_cvk^S)^2*(Eck-Evk+q))
 
+! input: ne
+
 program ebg
   use typedefs
   use nrtype

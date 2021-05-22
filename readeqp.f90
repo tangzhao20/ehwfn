@@ -26,11 +26,11 @@ subroutine readeqp(jobs,nv,nc,nk,Ec,Ev,kk)
     if (nc>tmp_n) then
       call die("more conduction bands in eigenvectors than eqp.dat")
     endif
-    do ic = 1, nc
-      read(13,*) something, something, something, Ec(ic,ik)
-    enddo ! ic
     do ic = nc+1, tmp_n, 1
       read(13,*) ! padding to tmpnc
+    enddo ! ic
+    do ic = 1, nc
+      read(13,*) something, something, something, Ec(ic,ik)
     enddo ! ic
   enddo ! ik
   close(13)
@@ -59,12 +59,12 @@ subroutine readeqp(jobs,nv,nc,nk,Ec,Ev,kk)
     if (nv>tmp_n) then
       call die("more valence bands in eigenvectors than eqp_q.dat")
     endif
-    do iv = nv+1, tmp_n, 1
-      read(14,*) ! padding to tmp_n
-    enddo ! iv
     do iv = nv, 1, -1
 !      read(14,*) something, something, something, Ev(iv,ik2)
       read(14,*) something, something, something, Ev(iv,ik)
+    enddo ! iv
+    do iv = nv+1, tmp_n, 1
+      read(14,*) ! padding to tmp_n
     enddo ! iv
   enddo ! ik
   close(14)

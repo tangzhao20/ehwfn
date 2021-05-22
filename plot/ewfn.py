@@ -94,6 +94,10 @@ for ie in range(len(iwstates)) :
     fig = plt.figure()
     ax = fig.add_subplot(111)
     plt.tricontourf(x_out, y_out, z_out,1000,cmap="viridis")
+    f3=open("ewfn_"+str(iwstates[ie])+"_plt.dat","w")
+    for ik in range(len(x_out)):
+        f3.write(str(x_out[ik])+" "+str(y_out[ik])+" "+str(z_out[ik])+"\n")
+    f3.close()
     #plt.tricontourf(x_out, y_out, z_out,1000,cmap="nipy_spectral")
     
     plt.xlim(min(x_out)*1.1,max(x_out)*1.1)
