@@ -2,6 +2,8 @@
 ! gS(w)=sum_vck(AvckS^2*delta(Eck-Evk-Ew))
 
 ! input: nwstates, iwstates
+! read from files: eigenvectors
+! write to files: ehdos_istate.dat
 
 program jdos
   use typedefs

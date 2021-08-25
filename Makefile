@@ -11,16 +11,19 @@ all:
 	make clean
 	make cplx
 	make clean
+	make plots
 real:
 	cp flavor_real.mk flavor.mk
 	make ebg.real.x
 	make jdos.real.x
 	make ewfn.real.x
+	make ebands.real.x
 cplx:
 	cp flavor_cplx.mk flavor.mk
 	make ebg.cplx.x
 	make jdos.cplx.x
 	make ewfn.cplx.x
+	make ebands.cplx.x
 
 .SUFFIXES: .f90p .f90 $(SUFFIXES)
 
@@ -36,7 +39,6 @@ cplx:
 	
 %.x:
 	$(LINK) $(FOPTS) -o $@ $^ $(LIBS)
-
 
 
 clean:

@@ -2,6 +2,8 @@
 ! Eg^S=sum_cvk((A_cvk^S)^2*(Eck-Evk+q))
 
 ! input: ne
+! read from files: eigenvectors
+! write to files: energy.dat
 
 program ebg
   use typedefs

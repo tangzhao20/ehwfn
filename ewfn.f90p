@@ -3,6 +3,8 @@
 ! AS_imag(k)=sum_vc(imag(AvckS))
 
 ! input: nwstates, iwstates
+! read from files: eigenvectors
+! write to files: ewfn_istate.dat
 
 program ewfn
   use typedefs

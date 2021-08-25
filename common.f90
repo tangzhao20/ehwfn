@@ -34,11 +34,10 @@ subroutine die(str)!,id_cpu)
 !  integer, intent(In), optional :: id_cpu
 
   write(*,*)
-  write(*,*) "Stop! ERROR in: ", Trim(str)
+  write(*,*) "Stop! ERROR in: ", trim(str)
 !  if (present(id_cpu)) write(*,*) "At cpu",id_cpu
   write(*,*)
   stop
 !  call MPI_Abort(MPI_COMM_WORLD, 0, ierr)
 
 endsubroutine die
-

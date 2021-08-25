@@ -1,4 +1,8 @@
-#!/util/common/python/py38/anaconda3-2020.11/bin/python3.8
+#!/usr/bin/env python3
+
+# input: iwstates
+# read from files: OUT(reciprocal lattice), ewfn_istate.dat
+# write to files: ewfn_istate.png
 
 import matplotlib.pyplot as plt
 import sys
