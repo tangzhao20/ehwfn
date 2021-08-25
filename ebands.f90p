@@ -1,0 +1,315 @@
+! calculate the k,b distribution of electronic hole wavefunction of state of exciton states,
+! prepare for the weighted band structure plot
+! |AvS(k)|^2=sum_c(AvckS^2)
+! |AcS(k)|^2=sum_v(AvckS^2)
+! where k is on the band structure path.
+
+
+! input: nwstates, iwstates
+! read from files: labelinfo.dat, gw.dat, eigenvectors
+! write to files: ebands_istate.dat
+
+program ebands
+  use typedefs
+  use nrtype
+  use mat
+  implicit none
+  integer :: ns, nv, nc, nk, nh, noutk, nbsk, nbsv, ie, ik, ic, iv, is, iw, ih, ix, iy, iz, ib, ioutk, ibsk
+  logical :: lbreak
+#ifdef CPLX
+  complex(dpc), allocatable :: Ae(:,:,:,:) ! ns, nv, nc, nk
+#else
+  real(dp), allocatable :: Ae(:,:,:,:) ! ns, nv, nc, nk
+#endif
+  real(dp), allocatable :: fwfn2(:) ! nk
+  real(dp), allocatable :: energy(:)! j%ne
+  real(dp), allocatable :: Abk2(:,:)! nc+nv, noutk
+  logical, allocatable :: lwwfn(:) ! j%ne
+  real(dp), allocatable :: kk(:,:) ! 3, nk
+  real(dp), allocatable :: outx(:) ! noutk
+  integer, allocatable :: outind(:) ! noutk
+  real(dp), allocatable :: khi(:,:) ! 3,nh
+  real(dp), allocatable :: xhi(:) ! nh
+  real(dp), allocatable :: eqp(:,:) ! nc+nv, nbsk
+  real(dp), allocatable :: eqpx(:) ! nbsk
+  real(dp), allocatable :: eqpout(:,:) ! nc+nv, noutk
+  
+  real(dp) :: Avcke, kp(3), distance, d1, d2, somefloat
+  type(joblist) :: jobs
+  integer :: ierr
+  character(len=80) :: filename
+  character(len=80) :: something
+  character(len=11) :: cdate
+  character(len=14) :: ctime
+
+  open(unit=881,file="out.dat",status="replace")
+  call date_time(cdate, ctime)
+  write(881,'(a,a11,1x,a14)') " Start Time: ", cdate, ctime
+
+  call readin(jobs)
+  if (jobs%nwstates==0) then
+    call die("jobs%nwstates=0. need input")
+  endif
+  jobs%ne=maxval(jobs%iwstates)
+
+  write(881,'(a)') " change ne to max(iwstates) "
+  write(881,'(a,i0)') " ne = ", jobs%ne
+
+
+  allocate(lwwfn(jobs%ne))
+  lwwfn=.false.
+  do iw =1, jobs%nwstates
+    lwwfn(jobs%iwstates(iw))=.true.
+  enddo ! iw
+
+  write(881,*)
+  write(881,*) "reading labelinfo.dat file."
+  open(unit=21,file="labelinfo.dat",form="formatted",status="old")
+  nh=0
+  do
+    read(21,"(a,i,4f)",iostat=ierr)
+    if (ierr==0) then
+      nh=nh+1
+    else
+      exit
+    endif
+  enddo
+  rewind(21)
+  allocate(khi(3,nh))
+  allocate(xhi(nh))
+  do ih=1,nh
+    read(21,*) something, something, xhi(ih), khi(:,ih)
+  enddo
+  close(21) 
+  write(881,'(a,i0)') " nh = ", nh
+
+
+  write(881,*)
+  write(881,*) "reading file eigenvectors headers"
+  open(unit=10,file="eigenvectors",form='unformatted',status='old')
+
+  read(10) ns
+  read(10) nv
+  read(10) nc
+  read(10) nk
+
+  write(881,'(a,i0)') " ns = ", ns
+  write(881,'(a,i0)') " nv = ", nv
+  write(881,'(a,i0)') " nc = ", nc
+  write(881,'(a,i0)') " nk = ", nk
+
+  allocate(kk(3,nk))
+  read(10) kk(:,:) ! kpoints
+
+  write(881,*)
+  write(881,*) "reading gw.dat file."
+  open(unit=22,file="gw.dat",form="formatted",status="old")
+  nbsk=0
+  do
+    read(22,"(2a4)",iostat=ierr) something, something
+    if (something/="    ") then
+      nbsk=nbsk+1
+    else
+      exit
+    endif ! ierr==0
+  enddo
+  write(881,'(a,i0)') " nbsk = ", nbsk
+  rewind(22)
+  nbsv=0
+  do
+    read(22,*,iostat=ierr) something, somefloat
+    if (ierr==0 .and. somefloat<1.d-6) then
+      nbsv=nbsv+1
+    else
+      exit
+    endif
+    do ik=1,nbsk
+      read(22,*)
+    enddo ! ik
+  enddo
+  write(881,'(a,i0)') " nbsv = ", nbsv
+  rewind(22)
+
+  allocate(eqp(nv+nc,nbsk))
+  allocate(eqpx(nbsk))
+
+  do ik=1,nbsk
+    read(22,*) eqpx(ik), something
+  enddo ! ik
+  rewind(22)
+
+  do ib=1,nbsv-nv,1
+    write(*,*)"ib=",ib
+    do ik=1,nbsk+1
+      read(22,*)
+    enddo ! ik
+  enddo
+
+  do iv=1,nv
+    do ik=1,nbsk
+      read(22,*) something, eqp(iv,ik)
+    enddo ! ik
+    read(22,*)
+  enddo ! iv 
+  do ic=1,nc
+    do ik=1,nbsk
+      read(22,*) something, eqp(nv+ic,ik)
+    enddo ! ik
+    read(22,*)
+  enddo ! ic 
+
+  allocate(outx(1000))
+  allocate(outind(1000))
+  noutk=0
+  write(881,*)
+  write(881,*) "matching k points to the path"
+  do ik=1,nk
+    do ih=1,nh
+      lbreak=.false.
+      do ix=-1,1
+        do iy=-1,1
+          do iz=-1,1
+            kp(1)=kk(1,ik)+dble(ix)
+            kp(2)=kk(2,ik)+dble(iy)
+            kp(3)=kk(3,ik)+dble(iz)
+            if (dpp(kp,khi(:,ih))<=1.d-5) then
+              noutk=noutk+1
+              ioutk=noutk
+              outind(ioutk)=ik
+              outx(ioutk)=xhi(ih)
+              lbreak=.true.
+            endif
+            if (ih<nh) then
+              if (dpl(kp,khi(:,ih),khi(:,ih+1))<=1.d-5 .and. dot(subtract(kp,khi(:,ih)),subtract(khi(:,ih+1),khi(:,ih)))>1.d-5 .and. dot(subtract(kp,khi(:,ih+1)),subtract(khi(:,ih),khi(:,ih+1)))>1.d-5) then
+                noutk=noutk+1
+                ioutk=noutk
+                outind(ioutk)=ik
+                outx(ioutk)=xhi(ih)+(xhi(ih+1)-xhi(ih))*dpp(kp,khi(:,ih))/dpp(khi(:,ih+1),khi(:,ih))
+                lbreak=.true.
+              endif
+            endif
+            if (lbreak) then
+              exit
+            endif
+          enddo ! iz
+          if (lbreak) then
+            exit
+          endif
+        enddo ! iy
+        if (lbreak) then
+          exit
+        endif
+      enddo ! ix
+
+    enddo ! ih
+  enddo ! ik
+
+  write(881,"(a)") " outind  outx  kk  :"
+  do ih=1,noutk
+    write(881,'(i5,4f8.3)') outind(ih), outx(ih), kk(:,outind(ih))
+  enddo
+
+  allocate(eqpout(nv+nc,noutk))
+
+  write(881,*)
+  write(881,*) "doing eqp interpolation"
+  do ioutk=1,noutk
+    ibsk=1
+    do
+      if (eqpx(ibsk)<outx(ioutk)-1.d-5) then
+        ibsk=ibsk+1
+      elseif (dabs(eqpx(ibsk)-outx(ioutk)) < 2.d-5) then
+        ibsk=ibsk
+        d1=0.d0
+        exit
+      else
+        ibsk=ibsk
+        d1=outx(ioutk)-eqpx(ibsk)
+        d2=eqpx(ibsk+1)-outx(ioutk)
+        exit
+      endif
+    enddo
+    if (dabs(d1)<1.d-6) then
+      do ib=1,nv+nc
+        eqpout(ib,ioutk)=eqp(ib,ibsk)
+      enddo ! ib
+    else
+      do ib=1,nv+nc
+        eqpout(ib,ioutk)=(eqp(ib,ibsk)*d2+eqp(ib,ibsk+1)*d1)/(d1+d2)
+      enddo ! ib
+    endif
+    write(*,*)ioutk,ibsk,d1,d2
+  enddo ! ioutk
+
+
+
+  write(881,*)
+  write(881,*) "reading file eigenvectors"
+
+  allocate(Ae(ns,nv,nc,nk))
+  allocate(energy(jobs%ne))
+
+  allocate(Abk2(nc+nv,noutk))
+
+
+  do ie = 1, jobs%ne
+    if (lwwfn(ie)==.false.) then
+      read(10) ! energy(ie)
+      read(10) ! Aread(:)
+      cycle
+    endif
+
+    Abk2=0.d0
+
+
+    read(10) energy(ie)
+    read(10) Ae
+    do ik = 1, nk
+      do ioutk =1, noutk
+        if (outind(ioutk)==ik) then
+          do ic = 1, nc
+            do iv = 1, nv
+              do is = 1, ns
+#ifdef CPLX
+                Avcke = dble(Ae(is,iv,ic,ik) * conjg(Ae(is,iv,ic,ik)))
+#else
+                Avcke = Ae(is,iv,ic,ik)**2
+#endif
+                Abk2(nv+1-iv,ioutk) = Abk2(nv+1-iv,ioutk) + Avcke
+                Abk2(nv+ic,ioutk) = Abk2(nv+ic,ioutk) + Avcke
+              enddo ! is
+            enddo ! iv
+          enddo ! ic
+        endif ! outind(ioutk)==ik
+      enddo ! ioutk
+    enddo ! ik
+
+
+    write(filename,'(a,i0,a)') "ebands_",ie,".dat"
+    open(unit=16,file=filename,form="formatted",status="replace")
+    write(16,'(a)') "# x, eqp(eV), AS^2(k)"
+    do ib=1,nc+nv
+      do ioutk=1,noutk
+        write(16,'(f10.5,2f15.9)') outx(ioutk), eqpout(ib,ioutk), Abk2(ib,ioutk)
+      enddo !ioutk
+      write(16,*)
+    enddo ! ib
+  enddo ! ie
+
+  close(10)
+  deallocate(Ae)
+
+  deallocate(outind)
+  deallocate(outx)
+  deallocate(eqp)
+  deallocate(eqpx)
+  deallocate(eqpout)
+
+
+  deallocate(Abk2)
+  deallocate(kk)
+  deallocate(energy)
+  write(881,*) 
+  call date_time(cdate, ctime)
+  write(881,'(a,a11,1x,a14)') " End Time: ", cdate, ctime
+endprogram ebands
