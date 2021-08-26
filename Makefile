@@ -11,7 +11,6 @@ all:
 	make clean
 	make cplx
 	make clean
-	make plots
 real:
 	cp flavor_real.mk flavor.mk
 	make ebg.real.x

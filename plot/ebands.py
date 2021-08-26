@@ -71,7 +71,7 @@ for ie in range(len(iwstates)) :
     
     sumsize=sum(sizedot)
     for i in range(len(sizedot)) :
-        sizedot[i]=sizedot[i]*5000
+        sizedot[i]=sizedot[i]*6000
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
