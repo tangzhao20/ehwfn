@@ -2,8 +2,8 @@ subroutine readin(jobs)
   use typedefs
   use nrtype
   implicit None
-  integer :: info, ierr, ieh
-  character(len=80) :: line, keyword
+  integer :: info, ierr, ieh, i
+  character(len=256) :: line, keyword
   type(joblist), intent(out) :: jobs
 
   write(881,*)
@@ -21,7 +21,7 @@ subroutine readin(jobs)
 ! do a loop thru input till the end of file
    
   do while(.true.)
-    read(101,'(a80)',iostat=info) line 
+    read(101,'(a256)',iostat=info) line 
     if (info<0) exit
 
 ! Skip comment lines
@@ -31,7 +31,7 @@ subroutine readin(jobs)
 
 ! Determine keyword:
     keyword=line(1:scan(line," ")-1)
-    line=adjustl(line(scan(line," ")+1:80))
+    line=adjustl(line(scan(line," ")+1:256))
 
 
     if(trim(keyword).eq.'ne') then
@@ -49,7 +49,10 @@ subroutine readin(jobs)
     elseif(trim(keyword).eq.'nwstates') then
       read(line,*,iostat=ierr) jobs%nwstates
       allocate(jobs%iwstates(jobs%nwstates))
-      jobs%iwstates=0
+!      jobs%iwstates=0
+      do i=1, jobs%nwstates
+        jobs%iwstates(i)=i
+      enddo
 
     elseif(trim(keyword).eq.'iwstates') then
       read(line,*,iostat=ierr) jobs%iwstates
@@ -64,6 +67,7 @@ subroutine readin(jobs)
 
     if (ierr/=0) then
       write(881,*) 'ERROR: Fail when read ', trim(keyword), ' in input.'
+      write(881,*) line
       call die("Fail when read "//trim(keyword)//" in input",0)
     endif
       

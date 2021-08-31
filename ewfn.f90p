@@ -1,4 +1,6 @@
 ! calculate the k-distribution of electronic hole wavefunction of state of exciton states
+! AS(k)^2=sum_vc(|AvckS|^2)
+! or the real/imaginary part separately (doesn`t seem to work yet)
 ! AS_real(k)=sum_vc(real(AvckS))
 ! AS_imag(k)=sum_vc(imag(AvckS))
 

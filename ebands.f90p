@@ -6,7 +6,7 @@
 
 
 ! input: nwstates, iwstates
-! read from files: labelinfo.dat, gw.dat, kmap.dat, eigenvectors
+! read from files: labelinfo.dat(wannier), gw.dat(wannier), kmap.dat(paratec), eqp.out(BSE), eigenvectors(BSE)
 ! write to files: ebands_istate.dat
 
 program ebands
@@ -23,8 +23,6 @@ program ebands
   real(dp), allocatable :: Ae(:,:,:,:) ! ns, nv, nc, nk
 #endif
   real(dp), allocatable :: Ae_rk(:,:,:,:) ! ns, nv, nc, nrk
-  real(dp), allocatable :: fwfn2(:) ! nk
-  real(dp), allocatable :: energy(:)! j%ne
   real(dp), allocatable :: Abk2(:,:)! nc+nv, noutk
   logical, allocatable :: lwwfn(:) ! j%ne
   real(dp), allocatable :: kk(:,:) ! 3, nk
@@ -36,11 +34,12 @@ program ebands
   real(dp), allocatable :: eqpx(:) ! nbsk
   real(dp), allocatable :: eqpout(:,:) ! nc+nv, noutk
   real(dp), allocatable :: eqpout2(:,:) ,eqpout3(:,:) ! nc+nv, noutk
+  ! they are used to match the wannier to the inteqp
   real(dp), allocatable :: eqpall(:,:) ! nc+nv, nk
   integer, allocatable :: kmap(:) ! nk
   integer, allocatable :: kcount(:) ! nrk
   
-  real(dp) :: Avcke, kp(3), distance, d1, d2, somefloat, ef
+  real(dp) :: kp(3), d1, d2, somefloat, ef
   type(joblist) :: jobs
   integer :: ierr, someint
   character(len=80) :: filename
@@ -69,7 +68,7 @@ program ebands
   enddo ! iw
 
   write(881,*)
-  write(881,*) "reading labelinfo.dat file."
+  write(881,*) "reading labelinfo.dat file"
   open(unit=21,file="labelinfo.dat",form="formatted",status="old")
   nh=0
   do
@@ -140,7 +139,7 @@ program ebands
   close(23)
 
   write(881,*)
-  write(881,*) "reading gw.dat file."
+  write(881,*) "reading gw.dat file"
   open(unit=22,file="gw.dat",form="formatted",status="old")
   nbsk=0
   do
@@ -220,7 +219,7 @@ program ebands
               lbreak=.true.
             endif
             if (ih<nh) then
-              if (dpl(kp,khi(:,ih),khi(:,ih+1))<=1.d-5 .and. dot(subtract(kp,khi(:,ih)),subtract(khi(:,ih+1),khi(:,ih)))>1.d-5 .and. dot(subtract(kp,khi(:,ih+1)),subtract(khi(:,ih),khi(:,ih+1)))>1.d-5) then
+              if (dpl(kp,khi(:,ih),khi(:,ih+1))<=1.d-5 .and. dot(kp-khi(:,ih),khi(:,ih+1)-khi(:,ih))>1.d-5 .and. dot(kp-khi(:,ih+1),khi(:,ih)-khi(:,ih+1))>1.d-5) then
                 noutk=noutk+1
                 ioutk=noutk
                 outind(ioutk)=ik
@@ -243,6 +242,9 @@ program ebands
 
     enddo ! ik
   enddo ! ih
+
+  deallocate(xhi)
+  deallocate(khi)
 
   write(881,"(a)") " outind  outx  kk  :"
   do ih=1,noutk
@@ -278,6 +280,7 @@ program ebands
     enddo ! ib
   enddo ! ik
 
+  deallocate(eqpall)
 
   write(881,*)
   write(881,*) "doing eqp interpolation"
@@ -329,7 +332,6 @@ program ebands
 
   allocate(Ae(ns,nv,nc,nk))
   allocate(Ae_rk(ns,nv,nc,nrk))
-  allocate(energy(jobs%ne))
 
   allocate(Abk2(nc+nv,noutk))
 
@@ -344,7 +346,7 @@ program ebands
     Abk2=0.d0
 
 
-    read(10) energy(ie)
+    read(10) ! energy(ie)
     read(10) Ae
 
     Ae_rk=0.d0
@@ -388,26 +390,6 @@ program ebands
       enddo ! ioutk
     enddo ! ik
 
-!    do ik = 1, nk
-!      do ioutk =1, noutk
-!        if (outind(ioutk)==ik) then
-!          do ic = 1, nc
-!            do iv = 1, nv
-!              do is = 1, ns
-!#ifdef CPLX
-!                Avcke = dble(Ae(is,iv,ic,ik) * conjg(Ae(is,iv,ic,ik)))
-!#else
-!                Avcke = Ae(is,iv,ic,ik)**2
-!#endif
-!                Abk2(nv+1-iv,ioutk) = Abk2(nv+1-iv,ioutk) + Avcke
-!                Abk2(nv+ic,ioutk) = Abk2(nv+ic,ioutk) + Avcke
-!              enddo ! is
-!            enddo ! iv
-!          enddo ! ic
-!        endif ! outind(ioutk)==ik
-!      enddo ! ioutk
-!    enddo ! ik
-
     write(filename,'(a,i0,a)') "ebands_",ie,".dat"
     open(unit=16,file=filename,form="formatted",status="replace")
     write(16,'(a)') "# x, eqp(eV), AS^2(k)"
@@ -421,17 +403,22 @@ program ebands
 
   close(10)
   deallocate(Ae)
+  deallocate(Ae_rk)
+  deallocate(Abk2)
 
+  deallocate(lwwfn)
   deallocate(outind)
   deallocate(outx)
   deallocate(eqp)
   deallocate(eqpx)
   deallocate(eqpout)
+  deallocate(eqpout2)
+  deallocate(eqpout3)
 
-
-  deallocate(Abk2)
+  deallocate(kcount)
+  deallocate(kmap)
   deallocate(kk)
-  deallocate(energy)
+
   write(881,*) 
   call date_time(cdate, ctime)
   write(881,'(a,a11,1x,a14)') " End Time: ", cdate, ctime
