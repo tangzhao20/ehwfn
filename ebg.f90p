@@ -1,5 +1,10 @@
 ! find the band gap weighted by each exciton states
-! Eg^S=sum_cvk((A_cvk^S)^2*(Eck-Evk+q))
+! Eg^S=sum_cvk((A_cvkS)^2*(Eck-Evk+q))
+! calculate the ipr of the exciton wavefunction
+! IPR^S=sum_cvk(AcvkS^2)^2/sum_cvk(AcvkS^4)
+! normalization condition: AcvkS^2==1
+! IPR^S=1/sum_cvk(AcvkS^4)
+
 
 ! input: ne
 ! read from files: eigenvectors
@@ -15,11 +20,11 @@ program ebg
 #else
   real(dp), allocatable :: Ae(:,:,:,:) ! ns, nv, nc, nk
 #endif
-  real(dp), allocatable :: energy(:) ,Egap(:), Eb(:), Asum(:)! j%ne
+  real(dp), allocatable :: energy(:) ,Egap(:), Eb(:), Asum(:), ipr(:)! j%ne
   real(dp), allocatable :: Ec(:,:) ! nc, nk
   real(dp), allocatable :: Ev(:,:) ! nv, nk
   real(dp), allocatable :: kk(:,:) ! 3, nk
-  real(dp) :: Avcke
+  real(dp) :: Avcke, ipr0
   type(joblist) :: jobs
   integer :: ierr
   character(len=80) :: filename
@@ -65,7 +70,9 @@ program ebg
   allocate(Asum(jobs%ne))
   allocate(Egap(jobs%ne))
   allocate(Eb(jobs%ne))
+  allocate(ipr(jobs%ne))
   Asum=0.d0
+  ipr=0.d0
 #ifdef CPLX
   Egap=(0.d0,0.d0)
 !  Avcke=(0.d0,0.d0)
@@ -78,20 +85,24 @@ program ebg
     read(10) energy(ie)
     read(10) Ae
     do ik = 1, nk
+      ipr0=0.d0
       do ic = 1, nc
         do iv = 1, nv
           do is = 1, ns
 #ifdef CPLX
             Avcke = Ae(is,iv,ic,ik) * conjg(Ae(is,iv,ic,ik))
 #else
-            Avcke = Ae(is,iv,ic,ik) **2
+            Avcke = Ae(is,iv,ic,ik) * Ae(is,iv,ic,ik)
 #endif
             Egap(ie)=Egap(ie)+Avcke*(Ec(ic,ik)-Ev(iv,ik))
             Asum(ie)=Asum(ie)+Avcke
+            ipr0=ipr0+Avcke
           enddo ! is
         enddo ! iv
       enddo ! ic
+      ipr(ie)=ipr(ie)+ipr0*ipr0
     enddo ! ik
+    ipr(ie)=Asum(ie)*Asum(ie)/ipr(ie)
 
   enddo ! ie
   close(10)
@@ -111,12 +122,13 @@ program ebg
 
   Eb=Egap-energy
   open(unit=15,file="energy.dat",status="replace")
-  write(15,*) "exciton Eexciton(eV) Egap(eV) Ebinding(eV)"
+  write(15,*) "exciton Eexciton(eV) Egap(eV) Ebinding(eV) IPR"
   do ie = 1, jobs%ne
-    write(15,"(i6, 3f9.5)") ie, energy(ie), Egap(ie), Eb(ie)
+    write(15,"(i6, 3f9.5,f15.5)") ie, energy(ie), Egap(ie), Eb(ie), ipr(ie)
   enddo
   close(15)
 
+  deallocate(ipr)
   deallocate(Eb)
   deallocate(Egap)
   deallocate(Ev)

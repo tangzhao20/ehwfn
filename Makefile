@@ -17,12 +17,13 @@ real:
 	make jdos.real.x
 	make ewfn.real.x
 	make ebands.real.x
+	make ipr.real.x
 cplx:
 	cp flavor_cplx.mk flavor.mk
 	make ebg.cplx.x
 	make jdos.cplx.x
 	make ewfn.cplx.x
-	make ebands.cplx.x
+	make ipr.cplx.x
 
 .SUFFIXES: .f90p .f90 $(SUFFIXES)
 

@@ -22,6 +22,17 @@ contains
     cross(3) = a(1) * b(2) - a(2) * b(1)
   endfunction cross
 
+  function equal(a, b)
+    logical :: equal
+    real(dp), intent(in) :: a(3), b(3)
+    if (max(dabs(a(1)-b(1)),dabs(a(2)-b(2)),dabs(a(3)-b(3)))<1.d-6) then
+      equal=.True.
+    else
+      equal=.False.
+    endif
+  endfunction equal
+
+
   function dpp(a, b)
   ! distance from point a to point b
     real(dp) :: dpp
