@@ -7,7 +7,7 @@
 
 
 ! input: ne
-! read from files: eigenvectors
+! read from files: eigenvectors energy.dat eqp.dat (eqp_q.dat)
 ! write to files: energy.dat
 
 program ebg
@@ -122,9 +122,9 @@ program ebg
 
   Eb=Egap-energy
   open(unit=15,file="energy.dat",status="replace")
-  write(15,*) "exciton Eexciton(eV) Egap(eV) Ebinding(eV) IPR"
+  write(15,*) "#exciton Eexciton(eV) Egap(eV) Ebinding(eV) IPR"
   do ie = 1, jobs%ne
-    write(15,"(i6, 3f9.5,f15.5)") ie, energy(ie), Egap(ie), Eb(ie), ipr(ie)
+    write(15,"(i6, 3f9.5,f12.5)") ie, energy(ie), Egap(ie), Eb(ie), ipr(ie)
   enddo
   close(15)
 

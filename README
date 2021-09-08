@@ -1,7 +1,9 @@
 #
 ebg:
-Calculate the band gap weighted by each exciton states.
-Eg^S=sum_cvk((A_cvk^S)^2*(Eck-Evk))
+find the band gap weighted by each exciton states
+Eg^S=sum_cvk((A_cvkS)^2*(Eck-Evk+q))
+calculate the ipr of the exciton wavefunction
+IPR^S=sum_cvk(AcvkS^2)^2/sum_cvk(AcvkS^4)
 
 jdos:
 Calculate joint density of state of exciton states
@@ -10,9 +12,6 @@ gS(w)=sum_vck(AvckS^2*delta(Eck-Evk-Ew))
 ewfn:
 calculate the k-distribution of electronic hole wavefunction of state of exciton states
 AS(k)^2=sum_vc(|AvckS|^2)
-or the real/imaginary part separately (doesn`t seem to work yet)
-AS_real(k)=sum_vc(real(AvckS))
-AS_imag(k)=sum_vc(imag(AvckS))
 
 ebands:
 calculate the k,b distribution of electronic hole wavefunction of state of exciton states,
@@ -20,6 +19,9 @@ prepare for the weighted band structure plot
 |AvS(k)|^2=sum_c(AvckS^2)
 |AcS(k)|^2=sum_v(AvckS^2)
 where k is on the band structure path.
+
+ipr:
+doesn`t work now
 
 ########################################
 

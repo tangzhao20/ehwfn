@@ -22,6 +22,16 @@ for l in range(len(line)) :
         for i in range(1,len(word)) :
             iwstates.append(int(word[i]))
         break
+if iwstates==[] :
+    for l in range(len(line)) :
+        word=line[l].split()
+        if len(word)==0 or word[0][0] == "#" or word[0][0] == "!" :
+            continue
+        if word[0]=="nwstates" :
+            nwstates=int(word[1])
+            break
+    for i in range(nwstates) :
+        iwstates.append(i+1)
 
 f2=open("OUT","r")
 line=f2.readlines()
@@ -111,3 +121,4 @@ for ie in range(len(iwstates)) :
     plt.colorbar(format="%.1f")
     ax.set_aspect('equal')
     plt.savefig("ev"+str(iwstates[ie])+".png",dpi=300,bbox_inches='tight')
+    plt.close()

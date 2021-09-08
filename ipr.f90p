@@ -1,7 +1,10 @@
 ! calculate real space PR on k space
 ! PR^S=sum_k((sum_cvk`(Acvk`S*Acv(k-k`)S))^2)
-! doesn't seem to work now
+! doesn't work
 
+! TODO: real space wavefunction
+! \psi(r_e,r_h)=sum_vck(AvckS \phi_ck(r_e) e^(ik.r_e) conjg(\phi_ck(r_h) e^(i(k+q).r)) )
+! then calculate ipr from this
 
 ! input: ne
 ! read from files: eigenvectors

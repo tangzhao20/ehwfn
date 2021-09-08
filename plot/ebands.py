@@ -49,7 +49,11 @@ x1label=[]
 for l in range(len(line)) :
     word=line[l].split()
     x1ticks.append(float(word[2]))
-    x1label.append(word[0])
+    if word[0]=="G" or word[0]=="Gamma" :
+        x1label.append("Γ")
+    else :
+        x1label.append(word[0])
+
 
 for ie in range(len(iwstates)) :
     istate=iwstates[ie]

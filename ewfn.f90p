@@ -5,7 +5,7 @@
 ! AS_imag(k)=sum_vc(imag(AvckS))
 
 ! input: nwstates, iwstates
-! read from files: eigenvectors
+! read from files: eigenvectors eqp.dat
 ! write to files: ewfn_istate.dat
 
 program ewfn
@@ -80,7 +80,7 @@ program ewfn
 
   allocate(Ae(ns,nv,nc,nk))
   allocate(energy(jobs%ne))
-  allocate(Asum(jobs%ne))
+  allocate(Asum(jobs%nwstates))
 
   if (jobs%lsquare) then
     allocate(fwfn2(nk))
@@ -89,14 +89,14 @@ program ewfn
   endif ! jobs%lsquare
 
   Asum=0.d0
-
+  iw=0
   do ie = 1, jobs%ne
     if (lwwfn(ie)==.false.) then
       read(10) ! energy(ie)
       read(10) ! Aread(:)
       cycle
     endif
-
+    iw=iw+1
     if (jobs%lsquare) then
 
       fwfn2=0.d0
@@ -121,7 +121,7 @@ program ewfn
               Avcke = Ae(is,iv,ic,ik)**2
 #endif
               fwfn2(ik) = fwfn2(ik) + Avcke
-              Asum(ie)=Asum(ie)+Avcke
+              Asum(iw)=Asum(iw)+Avcke
             enddo ! is
           enddo ! iv
         enddo ! ic
@@ -137,7 +137,7 @@ program ewfn
               Avcke = Ae(is,iv,ic,ik)**2
 #endif
               fwfn(ik) = fwfn(ik) + Ae(is,iv,ic,ik)
-              Asum(ie)=Asum(ie)+Avcke
+              Asum(iw)=Asum(iw)+Avcke
             enddo ! is
           enddo ! iv
         enddo ! ic
@@ -175,8 +175,8 @@ program ewfn
     write(881,*)"AvckS normalization checked, sum_vck(|AvckS|^2)=1"
   else
     write(881,*)"AvckS is not normalized, sum_vck(|AvckS|^2) /= 1"
-    do ie = 1, jobs%ne
-      write(881,"(i6,f9.5)") ie,Asum(ie)
+    do iw = 1, jobs%nwstates
+      write(881,"(i6,f9.5)") jobs%iwstates(iw),Asum(iw)
     enddo ! ie
     call die("AvckS is not normalized")
   endif
