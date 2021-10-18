@@ -3,3 +3,4 @@ ne 100
 #lwkpoints .false.
 #nwstates 5
 #iwstates 1 2 3 4 5
+#nbsv 17 # how many valence bands are in the wannier band structure

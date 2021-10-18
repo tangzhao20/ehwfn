@@ -5,8 +5,8 @@
 ! where k is on the band structure path.
 
 
-! input: nwstates, iwstates
-! read from files: labelinfo.dat(wannier), gw.dat(wannier), kmap.dat(paratec), eqp.out(BSE), eigenvectors(BSE)
+! input: nwstates, iwstates, nbsv
+! read from files: labelinfo.dat(wannier), band.dat(wannier), kmap.dat(paratec), eqp.out(BSE), eigenvectors(BSE)
 ! write to files: ebands_istate.dat
 
 program ebands
@@ -54,6 +54,9 @@ program ebands
   call readin(jobs)
   if (jobs%nwstates==0) then
     call die("jobs%nwstates=0. need input")
+  endif
+  if (jobs%nbsv==0) then
+    call die("jobs%nbsv=0. need input")
   endif
   jobs%ne=maxval(jobs%iwstates)
 
@@ -139,8 +142,8 @@ program ebands
   close(23)
 
   write(881,*)
-  write(881,*) "reading gw.dat file"
-  open(unit=22,file="gw.dat",form="formatted",status="old")
+  write(881,*) "reading band.dat file"
+  open(unit=22,file="band.dat",form="formatted",status="old")
   nbsk=0
   do
     read(22,"(2a4)",iostat=ierr) something, something
@@ -152,20 +155,20 @@ program ebands
   enddo
   write(881,'(a,i0)') " nbsk = ", nbsk
   rewind(22)
-  nbsv=0
-  do
-    read(22,*,iostat=ierr) something, somefloat
-    if (ierr==0 .and. somefloat<1.d-6) then
-      nbsv=nbsv+1
-    else
-      exit
-    endif
-    do ik=1,nbsk
-      read(22,*)
-    enddo ! ik
-  enddo
-  write(881,'(a,i0)') " nbsv = ", nbsv
-  rewind(22)
+!  nbsv=0
+!  do
+!    read(22,*,iostat=ierr) something, somefloat
+!    if (ierr==0 .and. somefloat<1.d-6) then
+!      nbsv=nbsv+1
+!    else
+!      exit
+!    endif
+!    do ik=1,nbsk
+!      read(22,*)
+!    enddo ! ik
+!  enddo
+!  write(881,'(a,i0)') " nbsv = ", nbsv
+!  rewind(22)
 
   allocate(eqp(nv+nc,nbsk))
   allocate(eqpx(nbsk))
@@ -175,7 +178,7 @@ program ebands
   enddo ! ik
   rewind(22)
 
-  do ib=1,nbsv-nv,1
+  do ib=1,jobs%nbsv-nv,1
     do ik=1,nbsk+1
       read(22,*)
     enddo ! ik
@@ -196,6 +199,13 @@ program ebands
 
   close(22)
 
+  ! align Fermi level to 0 eV
+  ef=maxval(eqp(nv,:))
+  do ib=1,nc+nv
+    do ik=1,nbsk
+      eqp(ib,ik)=eqp(ib,ik)-ef
+    enddo ! ik
+  enddo ! ib
 
   allocate(outx(1000))
   allocate(outind(1000))

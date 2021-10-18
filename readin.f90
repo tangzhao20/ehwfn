@@ -16,6 +16,7 @@ subroutine readin(jobs)
   jobs%nwstates = 0
   jobs%sigma = 0.05
   jobs%lsquare = .true.
+  jobs%nbsv=0
 
   open(unit = 101, file='input' , form ='formatted')
 ! do a loop thru input till the end of file
@@ -53,12 +54,12 @@ subroutine readin(jobs)
       do i=1, jobs%nwstates
         jobs%iwstates(i)=i
       enddo
-
     elseif(trim(keyword).eq.'iwstates') then
       read(line,*,iostat=ierr) jobs%iwstates
-
     elseif(trim(keyword).eq.'sigma') then
       read(line,*,iostat=ierr) jobs%sigma
+    elseif(trim(keyword).eq.'nbsv') then
+      read(line,*,iostat=ierr) jobs%nbsv
 
     else
       write(881,*) 'ERROR: Unexpected keyword ', trim(keyword), ' was found in input.'
@@ -86,5 +87,9 @@ subroutine readin(jobs)
     enddo ! ieh
     write(881,'(a,f7.5)') " sigma = ", jobs%sigma
   endif
+  if (jobs%nbsv/=0) then
+    write(881,'(a,i0)') " nbsv = ", jobs%nbsv
+  endif
+    
 
 endsubroutine readin

@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# plot the excitonic wavefunction in k-space
+# the hexagonal structure is supported
+
 # input: iwstates
 # read from files: OUT(reciprocal lattice), ewfn_istate.dat
 # write to files: ewfn_istate.png
@@ -120,5 +123,5 @@ for ie in range(len(iwstates)) :
     ax.set_ylabel("ky (1/Å)")
     plt.colorbar(format="%.1f")
     ax.set_aspect('equal')
-    plt.savefig("ev"+str(iwstates[ie])+".png",dpi=300,bbox_inches='tight')
+    plt.savefig("ewfn_"+str(iwstates[ie])+".png",dpi=300,bbox_inches='tight')
     plt.close()

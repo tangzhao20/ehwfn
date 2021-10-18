@@ -3,7 +3,7 @@
 ! we use a gaussian smearing in practice
 
 ! input: nwstates, iwstates
-! read from files: eigenvectors
+! read from files: eigenvectors, eqp.dat
 ! write to files: ehdos_istate.dat
 
 program jdos
@@ -21,7 +21,7 @@ program jdos
   real(dp), allocatable :: Ec(:,:) ! nc, nk
   real(dp), allocatable :: Ev(:,:) ! nv, nk
   real(dp), allocatable :: kk(:,:) ! 3, nk
-  real(dp), allocatable :: fjdos(:), ejdos(:) ! nj=1000
+  real(dp), allocatable :: fjdos(:), ejdos(:) ! nj=5000
   real(dp) :: Avcke
   type(joblist) :: jobs
   integer :: ierr
@@ -75,11 +75,11 @@ program jdos
   allocate(Ae(ns,nv,nc,nk))
   allocate(energy(jobs%ne))
   allocate(Asum(jobs%ne))
-  allocate(fjdos(1000))
-  allocate(ejdos(1000))
+  allocate(fjdos(5000))
+  allocate(ejdos(5000))
 
-  do ij = 1, 1000
-    ejdos(ij)=dble(ij-1)*1.d-2
+  do ij = 1, 5000
+    ejdos(ij)=dble(ij-1)*2.d-3
   enddo ! ij
 
   Asum=0.d0
@@ -104,7 +104,7 @@ program jdos
 #endif
             Asum(ie)=Asum(ie)+Avcke
             
-            do ij = 1, 1000
+            do ij = 1, 5000
 !              xx=Ec(ic,ik)-Ev(iv,ik)-ejdos
               fjdos(ij)=fjdos(ij)+Avcke*0.3989422804014326779399/jobs%sigma*exp(-0.5*((Ec(ic,ik)-Ev(iv,ik)-ejdos(ij))/jobs%sigma)**2)
             enddo ! ij
@@ -115,8 +115,8 @@ program jdos
 
     write(filename,'(a,i0,a)') "ehdos_",ie,".dat"
     open(unit=16,file=filename,form="formatted",status="replace")
-    do ij = 1, 1000
-      write(16,'(f6.2,f18.9)') ejdos(ij), fjdos(ij)
+    do ij = 1, 5000
+      write(16,'(f7.3,f18.9)') ejdos(ij), fjdos(ij)
     enddo ! ij
     close(16)
   enddo ! ie

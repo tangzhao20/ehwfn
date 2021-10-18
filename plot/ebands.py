@@ -19,9 +19,20 @@ for l in range(len(line)) :
     if word[0]=="iwstates" :
         for i in range(1,len(word)) :
             iwstates.append(int(word[i]))
-        break
+    if word[0]=="nbsv" :
+        nbsv=int(word[1])
+if iwstates==[] :
+    for l in range(len(line)) :
+        word=line[l].split()
+        if len(word)==0 or word[0][0] == "#" or word[0][0] == "!" :
+            continue
+        if word[0]=="nwstates" :
+            nwstates=int(word[1])
+            for i in range(nwstates) :
+                iwstates.append(i+1)
+            break
 
-f0=open('gw.dat')
+f0=open('band.dat')
 line=f0.readlines()
 f0.close()
 x=[]
@@ -40,6 +51,11 @@ for l in range(len(line)) :
         continue
     x0.append(float(word[0]))
     eig0.append(float(word[1]))
+
+ef=max(eig[nbsv-1])
+for i in range(len(eig)):
+    for j in range(len(eig[i])) :
+        eig[i][j]=eig[i][j]-ef
 
 f0=open('labelinfo.dat')
 line=f0.readlines()
@@ -82,7 +98,7 @@ for ie in range(len(iwstates)) :
     sumsize=sum(sizedot)
     for i in range(len(sizedot)) :
 #        sizedot[i]=sizedot[i]*6000
-        sizedot[i]=sizedot[i]**0.6*1000
+        sizedot[i]=sizedot[i]**0.5*1000
         
 
     fig = plt.figure()

@@ -12,6 +12,7 @@ module typedefs
     integer :: nwstates
     integer, pointer :: iwstates(:)
     real(dp) :: sigma
+    integer :: nbsv
   endtype
 
 !---------------------------
