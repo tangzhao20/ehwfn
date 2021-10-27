@@ -40,6 +40,9 @@ cplx:
 %.x:
 	$(LINK) $(FOPTS) -o $@ $^ $(LIBS)
 
+tar:
+	tar --exclude="*.tar.gz" --exclude=".git*" --exclude="*.x" --exclude="*.o" --transform=s,^,ehwfn\/,S -cvzf ehwfn.tar.gz *
+
 
 clean:
 	rm -f *.o *.mod *.p.f90
