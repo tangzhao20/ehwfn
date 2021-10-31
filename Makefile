@@ -23,6 +23,7 @@ cplx:
 	make ebg.cplx.x
 	make jdos.cplx.x
 	make ewfn.cplx.x
+	make ebands.cplx.x
 	make ipr.cplx.x
 
 .SUFFIXES: .f90p .f90 $(SUFFIXES)
@@ -42,7 +43,6 @@ cplx:
 
 tar:
 	tar --exclude="*.tar.gz" --exclude=".git*" --exclude="*.x" --exclude="*.o" --transform=s,^,ehwfn\/,S -cvzf ehwfn.tar.gz *
-
 
 clean:
 	rm -f *.o *.mod *.p.f90

@@ -5,29 +5,30 @@
 ! normalization condition: AcvkS^2==1
 ! IPR^S=1/sum_cvk(AcvkS^4)
 
-
-! input: ne
-! read from files: eigenvectors energy.dat eqp.dat (eqp_q.dat)
+! input: (ne)
+! read from files: eigenvectors eqp.dat (eqp_q.dat) (eigenvalues.dat)
 ! write to files: energy.dat
 
 program ebg
   use typedefs
   use nrtype
   implicit none
-  integer :: ns, nv, nc, nk, ie, ik, ic, iv, is
+  integer :: ns, nv, nc, nk, ie, ik, ic, iv, is, ne_all
 #ifdef CPLX
   complex(dpc), allocatable :: Ae(:,:,:,:) ! ns, nv, nc, nk
 #else
   real(dp), allocatable :: Ae(:,:,:,:) ! ns, nv, nc, nk
 #endif
-  real(dp), allocatable :: energy(:) ,Egap(:), Eb(:), Asum(:), ipr(:)! j%ne
+  real(dp) :: energy, Egap, Eb, ipr
+  real(dp), allocatable :: Asum(:), d2(:), e_save(:)! j%ne
   real(dp), allocatable :: Ec(:,:) ! nc, nk
   real(dp), allocatable :: Ev(:,:) ! nv, nk
   real(dp), allocatable :: kk(:,:) ! 3, nk
   real(dp) :: Avcke, ipr0
   type(joblist) :: jobs
+  logical :: lfile
   integer :: ierr
-  character(len=80) :: filename
+  character(len=80) :: filename,something
   character(len=11) :: cdate
   character(len=14) :: ctime
 
@@ -35,12 +36,34 @@ program ebg
   call date_time(cdate, ctime)
   write(881,'(a,a11,1x,a14)') " Start Time: ", cdate, ctime
 
-
   call readin(jobs)
+  ! if ne is given in input then read it
+  ! if input doesn`t exist try reading it from eigenvalues.dat
+  ! if eigenvalues.dat doesn`t exist, read it as ns*nv*nc*nk in eigenvectors
 
-  if (jobs%ne==0) then
-    call die("ne=0. need input")
-  endif
+  lfile=.False.
+  inquire(file="eigenvalues.dat",exist=lfile)
+  if (lfile) then
+    write(881,*)
+    write(881,*) "eigenvalues.dat exists"
+    open(unit=25,file="eigenvalues.dat",status="old")
+    read(25,*) something, something, something, ne_all
+    if (jobs%ne==0) then
+      write(881,*) "ne is read from eigenvalues.dat"
+      jobs%ne=ne_all
+      write(881,'(a,i0)') " ne = ", jobs%ne
+    elseif (jobs%ne>ne_all) then
+      write(881,*) "ne from input is larger than from eigenvalues.dat. reset ne"
+      jobs%ne=ne_all
+      write(881,'(a,i0)') " ne = ", jobs%ne
+    endif
+     
+    read(25,*)
+    read(25,*)
+    read(25,*)
+  else
+    write(881,*) "eigenvalues.dat doesn`t exist"
+  endif ! lfile
 
   write(881,*)
   write(881,*) "reading file eigenvectors headers"
@@ -49,11 +72,34 @@ program ebg
   read(10) nv
   read(10) nc
   read(10) nk
-
   write(881,'(a,i0)') " ns = ", ns
   write(881,'(a,i0)') " nv = ", nv
   write(881,'(a,i0)') " nc = ", nc
   write(881,'(a,i0)') " nk = ", nk
+
+  if (lfile .and. ne_all>ns*nv*nc*nk) then
+    write(881,"(a,i0,a,i0)") " Warning: ne from eigenvalues.dat ", ne_all, " > ns*nv*nc*nk ", ns*nc*nv*nk
+  endif 
+
+  if (jobs%ne==0) then
+    write(881,*) "ne is calculated from ns*nv*nc*nk"
+    jobs%ne=ns*nv*nc*nk
+    write(881,'(a,i0)') " ne = ", jobs%ne
+  elseif (jobs%ne>ns*nv*nc*nk) then
+    write(881,*) "ne is larger than ns*nv*nc*nk. reset ne"
+    jobs%ne=ns*nv*nc*nk
+    write(881,'(a,i0)') " ne = ", jobs%ne
+  endif
+
+  if (lfile) then
+    write(881,*)
+    write(881,*) "reading |dipole|^2 from eigenvalues.dat"
+    allocate(d2(jobs%ne))
+    allocate(e_save(jobs%ne))
+    do ie = 1, jobs%ne 
+      read(25,*) e_save(ie), d2(ie)
+    enddo
+  endif ! lfile
 
   allocate(kk(3,nk))
   read(10) kk(:,:) ! kpoints
@@ -66,23 +112,24 @@ program ebg
   write(881,*) "reading file eigenvectors"
 
   allocate(Ae(ns,nv,nc,nk))
-  allocate(energy(jobs%ne))
   allocate(Asum(jobs%ne))
-  allocate(Egap(jobs%ne))
-  allocate(Eb(jobs%ne))
-  allocate(ipr(jobs%ne))
   Asum=0.d0
-  ipr=0.d0
-#ifdef CPLX
-  Egap=(0.d0,0.d0)
-!  Avcke=(0.d0,0.d0)
-#else
-!  Avcke=0.d0
-  Egap=0.d0
-#endif
+
+  open(unit=15,file="energy.dat",status="replace")
+  if (lfile) then
+    write(15,*) "#exciton Eexciton(eV) Egap(eV) Ebinding(eV) IPR |dipole|^2"
+  else
+    write(15,*) "#exciton Eexciton(eV) Egap(eV) Ebinding(eV) IPR"
+  endif
 
   do ie = 1, jobs%ne
-    read(10) energy(ie)
+    Egap=0.d0
+    ipr=0.d0
+    read(10) energy
+    if (lfile .and. dabs(energy-e_save(ie))>1.e-4) then
+      write(881,"(a,i0,a)") " Warning: ",ie," energy doesn't match"
+      write(881,"(a,f10.6,a,f10.6)") "  eigenvalues.dat:",e_save(ie),"  eigenvectors:",energy
+    endif
     read(10) Ae
     do ik = 1, nk
       ipr0=0.d0
@@ -94,20 +141,32 @@ program ebg
 #else
             Avcke = Ae(is,iv,ic,ik) * Ae(is,iv,ic,ik)
 #endif
-            Egap(ie)=Egap(ie)+Avcke*(Ec(ic,ik)-Ev(iv,ik))
+            Egap=Egap+Avcke*(Ec(ic,ik)-Ev(iv,ik))
             Asum(ie)=Asum(ie)+Avcke
             ipr0=ipr0+Avcke
           enddo ! is
         enddo ! iv
       enddo ! ic
-      ipr(ie)=ipr(ie)+ipr0*ipr0
+      ipr=ipr+ipr0*ipr0
     enddo ! ik
-    ipr(ie)=Asum(ie)*Asum(ie)/ipr(ie)
+    ipr=Asum(ie)*Asum(ie)/ipr
 
+    Eb=Egap-energy
+    if (Eb<1.d-6) then
+      write(881,"(a,i0,a,f9.5)") " Warning: ", ie, " negative Eb ", Eb, " eV"
+    endif 
+    if (lfile) then
+      write(15,"(i6, 3f9.5,f12.5,e16.8)") ie, energy, Egap, Eb, ipr, d2(ie)
+    else
+      write(15,"(i6, 3f9.5,f12.5)") ie, energy, Egap, Eb, ipr
+    endif
+    
   enddo ! ie
   close(10)
+  close(15)
   deallocate(Ae)
 
+  write(881,*)
   if (maxval(Asum)<1.d0+1.d-6 .and. minval(Asum)>1.d0-1.d-6) then
     write(881,*)"AvckS normalization checked, sum_vck(|AvckS|^2)=1"
   else
@@ -119,23 +178,13 @@ program ebg
   endif
   deallocate(Asum)
 
-
-  Eb=Egap-energy
-  open(unit=15,file="energy.dat",status="replace")
-  write(15,*) "#exciton Eexciton(eV) Egap(eV) Ebinding(eV) IPR"
-  do ie = 1, jobs%ne
-    write(15,"(i6, 3f9.5,f12.5)") ie, energy(ie), Egap(ie), Eb(ie), ipr(ie)
-  enddo
-  close(15)
-
-  deallocate(ipr)
-  deallocate(Eb)
-  deallocate(Egap)
   deallocate(Ev)
   deallocate(Ec)
   deallocate(kk)
-!  deallocate(Avcke)
-  deallocate(energy)
+  if (lfile) then
+    deallocate(d2)
+    deallocate(e_save)
+  endif
   write(881,*) 
   call date_time(cdate, ctime)
   write(881,'(a,a11,1x,a14)') " End Time: ", cdate, ctime
