@@ -6,7 +6,7 @@
 
 
 ! input: nwstates, iwstates, nbsv
-! read from files: labelinfo.dat(wannier), band.dat(wannier), kmap.dat(paratec), eqp.out(BSE), eigenvectors(BSE)
+! read from files: labelinfo.dat(wannier), band.dat(wannier), kmap.dat(paratec), eqp.dat(BSE), eigenvectors(BSE)
 ! write to files: ebands_istate.dat
 
 program ebands

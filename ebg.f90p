@@ -100,6 +100,9 @@ program ebg
       read(25,*) e_save(ie), d2(ie)
     enddo
   endif ! lfile
+! renormalize |dipole|^2 by nk
+  d2=d2/nk
+
 
   allocate(kk(3,nk))
   read(10) kk(:,:) ! kpoints

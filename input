@@ -1,6 +1,16 @@
+# An example input file.
+
+# Number of eigenvalues. Used in ebg.
 ne 100
-#lwbands .true.
-#lwkpoints .false.
-#nwstates 5
-#iwstates 1 2 3 4 5
-#nbsv 17 # how many valence bands are in the wannier band structure
+
+# Number of calculated states
+nwstates 6
+# and the indices of calculated states. Used in ebands, ewfn, and jdos.
+iwstates 1 2 3 4 5 6
+
+# Number of valence bands in the wannier band structure. used in ebands.
+nbsv 17
+
+# find what to write in the out.dat. These parameters are not required.
+# lwbands .true.
+# lwkpoints .false.
