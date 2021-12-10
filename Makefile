@@ -14,19 +14,15 @@ all:
 real:
 	cp flavor_real.mk flavor.mk
 	make ebg.real.x
-	make jdos.real.x
+	make pdeh.real.x
 	make ewfn.real.x
 	make ebands.real.x
-	make ipr.real.x
-#	make kdx.real.x
 cplx:
 	cp flavor_cplx.mk flavor.mk
 	make ebg.cplx.x
-	make jdos.cplx.x
+	make pdeh.cplx.x
 	make ewfn.cplx.x
 	make ebands.cplx.x
-	make ipr.cplx.x
-#	make kdx.cplx.x
 
 .SUFFIXES: .f90p .f90 $(SUFFIXES)
 

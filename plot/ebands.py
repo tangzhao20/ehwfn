@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# Plot the band structure weighted by the electron/hole amplitude
+
 # input: iwstates
 # read from files: gw.dat, labelinfo.dat, ebands_istate.dat
 # write to files: ebands_istate.png

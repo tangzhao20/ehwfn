@@ -1,35 +1,31 @@
 #
 ebg:
-find the band gap weighted by each exciton states
+find the band gap weighted by the e-h amplitude
 Eg^S=sum_cvk((A_cvkS)^2*(Eck-Evk+q))
-calculate the ipr of the exciton wavefunction
+calculate the ipr of the e-h amplitude
 IPR^S=sum_cvk(AcvkS^2)^2/sum_cvk(AcvkS^4)
 
-jdos:
-Calculate joint density of state of exciton states
-gS(w)=sum_vck(AvckS^2*delta(Eck-Evk-Ew))
+pdeh:
+calculate the e-h pair participation ratio of exciton states
+PDeh^S(w)=sum_vck(AvckS^2*delta(Eck-Evk-w))
 
 ewfn:
-calculate the k-distribution of electronic hole wavefunction of state of exciton states
-AS(k)^2=sum_vc(|AvckS|^2)
+calculate the k-dependent pair amplitude of exciton states
+A^S(k)^2=sum_vc(|AvckS|^2)
 
 ebands:
-calculate the k,b distribution of electronic hole wavefunction of state of exciton states,
+calculate the electron/hole amplitude of exciton states,
 prepare for the weighted band structure plot
 |AvS(k)|^2=sum_c(AvckS^2)
 |AcS(k)|^2=sum_v(AvckS^2)
 where k is on the band structure path.
-
-ipr:
-doesn`t work now
 
 ########################################
 
 Input file: 
 input
 eigenvectors (from bse absorption)
-eqp.dat and eqp_q.dat
-(a shifted grid is assumed here)
+eqp.dat (and eqp_q.dat if a shifted grid is used)
 OUT (for the b vectors only)
 labelinfo.dat gw.dat eqp.dat kmap.dat (ebands.x)
 
@@ -39,6 +35,7 @@ energy.dat
 ewfn_*.dat
 ehdos_*.dat
 ebands_*.dat
+pdeh_*.dat
 
 ########################################
 

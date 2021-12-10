@@ -1,5 +1,5 @@
-! calculate the k,b distribution of electronic hole wavefunction of state of exciton states,
-! prepare for the weighted band structure plot
+! Calculate the electron/hole amplitude of exciton states
+! Prepare for the weighted band structure plot
 ! |AvS(k)|^2=sum_c(AvckS^2)
 ! |AcS(k)|^2=sum_v(AvckS^2)
 ! where k is on the band structure path.

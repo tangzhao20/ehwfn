@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# Used to sum up the k-dependent pair amplitude for a few states.
+# The states can be degenerated or not.
 # ewfnsum.py istate1 istate2 [istate3 istate4 ...]
 
 # read from files: ewfn_istate_plt.dat

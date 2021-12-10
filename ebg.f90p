@@ -1,8 +1,8 @@
-! find the band gap weighted by each exciton states
+! Find the band gap weighted by the e-h amplitude
 ! Eg^S=sum_cvk((A_cvkS)^2*(Eck-Evk+q))
-! calculate the ipr of the exciton wavefunction
+! Calculate the ipr of the e-h amplitude
 ! IPR^S=sum_cvk(AcvkS^2)^2/sum_cvk(AcvkS^4)
-! normalization condition: AcvkS^2==1
+! Normalization condition: AcvkS^2==1
 ! IPR^S=1/sum_cvk(AcvkS^4)
 
 ! input: (ne)

@@ -1,15 +1,18 @@
 # An example input file.
 
-# Number of eigenvalues. Used in ebg.
+# Number of eigenvalues. Default is the total number of exciton states. Used in ebg.
 ne 100
 
 # Number of calculated states
 nwstates 6
-# and the indices of calculated states. Used in ebands, ewfn, and jdos.
+# and the indices of calculated states. Used in ebands, ewfn, and ehpd.
 iwstates 1 2 3 4 5 6
 
-# Number of valence bands in the wannier band structure. used in ebands.
+# Number of valence bands in the wannier band structure. Used in ebands.
 nbsv 17
+
+# Smearing parameter (in eV) of the Gaussian smearing. Default is 0.05. Used in ehpd.
+sigma 0.05
 
 # find what to write in the out.dat. These parameters are not required.
 # lwbands .true.

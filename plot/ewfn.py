@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-# plot the excitonic wavefunction in k-space
-# the hexagonal structure is supported
+# Plot the k-dependent pair amplitude
+# The hexagonal structure is supported
 
 # input: iwstates
 # read from files: OUT(reciprocal lattice), ewfn_istate.dat

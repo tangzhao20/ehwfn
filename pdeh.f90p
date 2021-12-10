@@ -1,12 +1,12 @@
-! calculate joint density of state of exciton states
-! gS(w)=sum_vck(AvckS^2*delta(Eck-Evk-Ew))
-! we use a gaussian smearing in practice
+! Calculate the e-h pair participation ratio of exciton states
+! PDeh^S(w)=sum_vck(AvckS^2*delta(Eck-Evk-w))
+! We use a gaussian smearing in practice
 
 ! input: nwstates, iwstates
 ! read from files: eigenvectors, eqp.dat
-! write to files: ehdos_istate.dat
+! write to files: pdeh_istate.dat
 
-program jdos
+program pdeh
   use typedefs
   use nrtype
   implicit none
@@ -21,7 +21,7 @@ program jdos
   real(dp), allocatable :: Ec(:,:) ! nc, nk
   real(dp), allocatable :: Ev(:,:) ! nv, nk
   real(dp), allocatable :: kk(:,:) ! 3, nk
-  real(dp), allocatable :: fjdos(:), ejdos(:) ! nj=5000
+  real(dp), allocatable :: fout(:), eout(:) ! nj=5000
   real(dp) :: Avcke
   type(joblist) :: jobs
   integer :: ierr
@@ -74,23 +74,25 @@ program jdos
 
   allocate(Ae(ns,nv,nc,nk))
   allocate(energy(jobs%ne))
-  allocate(Asum(jobs%ne))
-  allocate(fjdos(5000))
-  allocate(ejdos(5000))
+  allocate(Asum(jobs%nwstates))
+  allocate(fout(5000))
+  allocate(eout(5000))
 
   do ij = 1, 5000
-    ejdos(ij)=dble(ij-1)*2.d-3
+    eout(ij)=dble(ij-1)*2.d-3
   enddo ! ij
 
   Asum=0.d0
 
+  iw=0
   do ie = 1, jobs%ne
     if (lwdos(ie)==.false.) then
       read(10) ! energy(ie)
       read(10) ! Aread(:)
       cycle
     endif
-    fjdos=0.d0
+    iw=iw+1
+    fout=0.d0
     read(10) energy(ie)
     read(10) Ae
     do ik = 1, nk
@@ -102,21 +104,21 @@ program jdos
 #else
             Avcke = Ae(is,iv,ic,ik) **2
 #endif
-            Asum(ie)=Asum(ie)+Avcke
+            Asum(iw)=Asum(iw)+Avcke
             
             do ij = 1, 5000
-!              xx=Ec(ic,ik)-Ev(iv,ik)-ejdos
-              fjdos(ij)=fjdos(ij)+Avcke*0.3989422804014326779399/jobs%sigma*exp(-0.5*((Ec(ic,ik)-Ev(iv,ik)-ejdos(ij))/jobs%sigma)**2)
+!              xx=Ec(ic,ik)-Ev(iv,ik)-eout
+              fout(ij)=fout(ij)+Avcke*0.3989422804014326779399/jobs%sigma*exp(-0.5*((Ec(ic,ik)-Ev(iv,ik)-eout(ij))/jobs%sigma)**2)
             enddo ! ij
           enddo ! is
         enddo ! iv
       enddo ! ic
     enddo ! ik
 
-    write(filename,'(a,i0,a)') "ehdos_",ie,".dat"
+    write(filename,'(a,i0,a)') "pdeh_",ie,".dat"
     open(unit=16,file=filename,form="formatted",status="replace")
     do ij = 1, 5000
-      write(16,'(f7.3,f18.9)') ejdos(ij), fjdos(ij)
+      write(16,'(f7.3,f18.9)') eout(ij), fout(ij)
     enddo ! ij
     close(16)
   enddo ! ie
@@ -128,8 +130,8 @@ program jdos
     write(881,*)"AvckS normalization checked, sum_vck(|AvckS|^2)=1"
   else
     write(881,*)"AvckS is not normalized, sum_vck(|AvckS|^2) /= 1"
-    do ie = 1, jobs%ne
-      write(881,"(i6,f9.5)") ie,Asum(ie)
+    do iw = 1, jobs%nwstates
+      write(881,"(i6,f9.5)") iw,Asum(iw)
     enddo ! ie
     call die("AvckS is not normalized")
   endif
@@ -142,4 +144,4 @@ program jdos
   write(881,*) 
   call date_time(cdate, ctime)
   write(881,'(a,a11,1x,a14)') " End Time: ", cdate, ctime
-endprogram jdos
+endprogram pdeh
