@@ -34,7 +34,7 @@ program pdeh
   write(881,'(a,a11,1x,a14)') " Start Time: ", cdate, ctime
 
   call readin(jobs)
-  if (jobs%nwstates==0) then
+  if (jobs%nwstates .eq. 0) then
     call die("jobs%nwstates=0. need input")
   endif
   jobs%ne=maxval(jobs%iwstates)
@@ -86,7 +86,7 @@ program pdeh
 
   iw=0
   do ie = 1, jobs%ne
-    if (lwdos(ie)==.false.) then
+    if (lwdos(ie) .eqv. .false.) then
       read(10) ! energy(ie)
       read(10) ! Aread(:)
       cycle

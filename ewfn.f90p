@@ -38,7 +38,7 @@ program ewfn
   write(881,'(a,a11,1x,a14)') " Start Time: ", cdate, ctime
 
   call readin(jobs)
-  if (jobs%nwstates==0) then
+  if (jobs%nwstates .eq. 0) then
     call die("jobs%nwstates=0. need input")
   endif
   jobs%ne=maxval(jobs%iwstates)
@@ -91,7 +91,7 @@ program ewfn
   Asum=0.d0
   iw=0
   do ie = 1, jobs%ne
-    if (lwwfn(ie)==.false.) then
+    if (lwwfn(ie) .eqv. .false.) then
       read(10) ! energy(ie)
       read(10) ! Aread(:)
       cycle
@@ -126,7 +126,7 @@ program ewfn
           enddo ! iv
         enddo ! ic
       enddo ! ik
-    else ! jobs%lsquare == .false.
+    else ! jobs%lsquare  .eqv.  .false.
       do ik = 1, nk
         do ic = 1, nc
           do iv = 1, nv

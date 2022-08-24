@@ -75,7 +75,7 @@ program ebands
   open(unit=21,file="labelinfo.dat",form="formatted",status="old")
   nh=0
   do
-    read(21,"(a,i,4f)",iostat=ierr)
+    read(21,"(6a)",iostat=ierr)
     if (ierr==0) then
       nh=nh+1
     else
@@ -347,7 +347,7 @@ program ebands
 
 
   do ie = 1, jobs%ne
-    if (lwwfn(ie)==.false.) then
+    if (lwwfn(ie) .eqv. .false.) then
       read(10) ! energy(ie)
       read(10) ! Aread(:)
       cycle

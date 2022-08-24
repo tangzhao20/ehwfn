@@ -8,6 +8,16 @@
 
 #tmp
 *.swp
+*.mod
+*.p.f90
+
 
 #example
 example
+
+#make
+mkf.mk
+
+#vscode
+.vscode
+.vscode/*
