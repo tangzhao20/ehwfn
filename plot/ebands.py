@@ -3,12 +3,10 @@
 # Plot the band structure weighted by the electron/hole amplitude
 
 # input: iwstates
-# read from files: gw.dat, labelinfo.dat, ebands_istate.dat
+# read from files: band.dat, labelinfo.dat, ebands_istate.dat
 # write to files: ebands_istate.png
 
 import matplotlib.pyplot as plt
-import sys
-import math
 
 f0=open("input","r")
 line=f0.readlines()
@@ -92,7 +90,9 @@ for ie in range(len(iwstates)) :
         xdot.append(float(word[0]))
         eigdot.append(float(word[1]))
         sizedot.append(float(word[2]))
-        if float(word[1]) < 1e-6 :
+        # TODO: fix color at VBM
+        # here we assume the band gap is larger than 0.005
+        if float(word[1]) < 1e-6+0.005 :
             colordot.append("C0")
         else :
             colordot.append("C1")

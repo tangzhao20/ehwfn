@@ -8,7 +8,6 @@
 # write to files: ewfn_istate.png
 
 import matplotlib.pyplot as plt
-import sys
 import math
 
 acc=0.0001

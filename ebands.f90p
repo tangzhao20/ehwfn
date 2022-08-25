@@ -15,7 +15,7 @@ program ebands
   use mat
   implicit none
   integer :: ns, nv, nc, nk, nh, noutk, nbsk, nbsv, nrk
-  integer :: ie, ik, ic, iv, is, iw, ih, ix, iy, iz, ib, ioutk, ibsk, irk, ik2, ib2
+  integer :: ie, ik, ic, iv, is, iw, ih, ix, iy, iz, ib, ioutk, ibsk, irk, ik2, ib2, ikvbm
   logical :: lbreak
 #ifdef CPLX
   complex(dpc), allocatable :: Ae(:,:,:,:) ! ns, nv, nc, nk
@@ -39,7 +39,7 @@ program ebands
   integer, allocatable :: kmap(:) ! nk
   integer, allocatable :: kcount(:) ! nrk
   
-  real(dp) :: kp(3), d1, d2, somefloat, ef
+  real(dp) :: kp(3), kpvbm(3), d1, d2, somefloat, ef, efall, vbmtmp
   type(joblist) :: jobs
   integer :: ierr, someint
   character(len=80) :: filename
@@ -120,6 +120,28 @@ program ebands
     endif
   enddo
 
+  write(881,*)
+  write(881,*) "reading eqp.dat"
+  allocate(eqpall(nv+nc,nk))
+  open(unit=24,file="eqp.dat",form="formatted",status="old")
+  do ik=1,nk
+    read(24,*)
+    do ib=1,nc+nv
+      read(24,*) something, something, something, eqpall(ib,ik)
+    enddo ! ib
+  enddo ! ik
+  close(24) 
+
+
+
+  vbmtmp=-1.e10
+  do ik=1,nk 
+    if (eqpall(nv,ik)>vbmtmp) then
+      vbmtmp=eqpall(nv,ik)
+      kpvbm=kk(:,ik)
+    endif
+  enddo ! ik
+
 
   write(881,*) 
   write(881,*) "reading kmap.dat file"
@@ -182,7 +204,7 @@ program ebands
     do ik=1,nbsk+1
       read(22,*)
     enddo ! ik
-  enddo
+  enddo ! ib
 
   do iv=1,nv
     do ik=1,nbsk
@@ -209,6 +231,7 @@ program ebands
 
   allocate(outx(1000))
   allocate(outind(1000))
+  
   noutk=0
   write(881,*)
   write(881,*) "matching k points to the path"
@@ -237,6 +260,9 @@ program ebands
                 lbreak=.true.
               endif
             endif
+            if (dpp(kp,kpvbm)<=1.d-5) then
+              ikvbm=ik
+            endif
             if (lbreak) then
               exit
             endif
@@ -262,21 +288,11 @@ program ebands
   enddo
 
   
-  write(881,*)
-  write(881,*) "reading eqp.dat"
-  allocate(eqpall(nv+nc,nk))
-  open(unit=24,file="eqp.dat",form="formatted",status="old")
-  do ik=1,nk
-    read(24,*)
-    do ib=1,nc+nv
-      read(24,*) something, something, something, eqpall(ib,ik)
-    enddo ! ib
-  enddo ! ik
-  close(24) 
-  ef=maxval(eqpall(nv,:))
+  efall=maxval(eqpall(nv,:))-eqp(nv,ikvbm)+maxval(eqp(nv,:))
+  ! TODO: if the VBM is not at the k-points sampling in eqp.dat
   do ik=1,nk
     do ib=1,nc+nv
-      eqpall(ib,ik)=eqpall(ib,ik)-ef
+      eqpall(ib,ik)=eqpall(ib,ik)-efall
     enddo ! ib
   enddo ! ik
 
