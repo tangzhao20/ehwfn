@@ -4,7 +4,7 @@ subroutine readin(jobs)
   implicit None
   integer :: info, ierr, ieh, i
   logical :: lfile
-  character(len=256) :: line, keyword
+  character(len=1024) :: line, keyword
   type(joblist), intent(out) :: jobs
 
   write(881,*)
@@ -26,7 +26,7 @@ subroutine readin(jobs)
   ! do a loop thru input till the end of file
      
     do while(.true.)
-      read(101,'(a256)',iostat=info) line 
+      read(101,'(a1024)',iostat=info) line 
       if (info<0) exit
   
   ! Skip comment lines
@@ -36,7 +36,7 @@ subroutine readin(jobs)
   
   ! Determine keyword:
       keyword=line(1:scan(line," ")-1)
-      line=adjustl(line(scan(line," ")+1:256))
+      line=adjustl(line(scan(line," ")+1:1024))
   
   
       if(trim(keyword).eq.'ne') then

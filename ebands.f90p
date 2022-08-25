@@ -306,7 +306,6 @@ program ebands
     enddo ! ib
   enddo ! ik
 
-  deallocate(eqpall)
 
   write(881,*)
   write(881,*) "doing eqp interpolation"
@@ -436,6 +435,7 @@ program ebands
   deallocate(outind)
   deallocate(outx)
   deallocate(eqp)
+  deallocate(eqpall)
   deallocate(eqpx)
   deallocate(eqpout)
   deallocate(eqpout2)
