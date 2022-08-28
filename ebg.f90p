@@ -156,7 +156,7 @@ program ebg
 
     Eb=Egap-energy
     if (Eb<1.d-6) then
-      write(881,"(a,i0,a,f9.5)") " Warning: ", ie, " negative Eb ", Eb, " eV"
+      write(881,"(a,i0,a,f9.5,a)") " Warning: ", ie, " negative Eb ", Eb, " eV"
     endif 
     if (lfile) then
       write(15,"(i6, 3f9.5,f12.5,e16.8)") ie, energy, Egap, Eb, ipr, d2(ie)
