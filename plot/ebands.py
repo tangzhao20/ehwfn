@@ -6,7 +6,14 @@
 # read from files: band.dat, labelinfo.dat, ebands_istate.dat
 # write to files: ebands_istate.png
 
+# Add -cv or -vc flag to write c_*.dat and v_*.dat files
+
 import matplotlib.pyplot as plt
+import sys
+
+fsplit=False
+if "-cv" in sys.argv or "-vc" in sys.argv :
+    fsplit=True
 
 f0=open("input","r")
 line=f0.readlines()
@@ -83,26 +90,35 @@ for ie in range(len(iwstates)) :
     sizedot=[]
     colordot=[]
     
+    if fsplit==True:
+        f1=open("v_"+str(istate)+".dat","w")
+        f2=open("c_"+str(istate)+".dat","w")
+
     for l in range(len(line)) :
         word=line[l].split()
         if len(word)==0 or word[0][0]=="#" or word[0][0]=="!" :
             continue
-        xdot.append(float(word[0]))
-        eigdot.append(float(word[1]))
-        sizedot.append(float(word[2]))
+        xdot0=float(word[0])
+        eigdot0=float(word[1])
+        sizedot0=float(word[2])**0.5*1000
+#        sizedot0=float(word[2])*6000
+        xdot.append(xdot0)
+        eigdot.append(eigdot0)
+        sizedot.append(sizedot0)
         # TODO: fix color at VBM
         # here we assume the band gap is larger than 0.005
-        if float(word[1]) < 1e-6+0.005 :
+        if float(eigdot0) < 1e-6+0.005 :
             colordot.append("C0")
+            if fsplit:
+                f1.write(str(xdot0)+" "+str(eigdot0)+" "+str(sizedot0)+"\n")
         else :
             colordot.append("C1")
+            if fsplit:
+                f2.write(str(xdot0)+" "+str(eigdot0)+" "+str(sizedot0)+"\n")
     
-    sumsize=sum(sizedot)
-    for i in range(len(sizedot)) :
-#        sizedot[i]=sizedot[i]*6000
-        sizedot[i]=sizedot[i]**0.5*1000
-        
-
+    if fsplit:
+        f1.close()
+        f2.close()
     fig = plt.figure()
     ax = fig.add_subplot(111)
     
