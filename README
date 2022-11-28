@@ -1,6 +1,6 @@
 #
 ebg:
-find the band gap weighted by the e-h amplitude
+find the non-interacting transition energy EgS
 Eg^S=sum_cvk((A_cvkS)^2*(Eck-Evk+q))
 calculate the ipr of the e-h amplitude
 IPR^S=sum_cvk(AcvkS^2)^2/sum_cvk(AcvkS^4)
