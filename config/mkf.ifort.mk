@@ -1,7 +1,5 @@
-F77     = ifort
 F90     = ifort
 
-F90free = ifort -free
 FPP     = ifort -EP
 
 DEFS  = 

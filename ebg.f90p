@@ -12,13 +12,19 @@
 program ebg
   use typedefs
   use nrtype
+#ifdef HDF5
+  use hdf5
+#endif
+  
   implicit none
-  integer :: ns, nv, nc, nk, ie, ik, ic, iv, is, ne_all
+  integer :: ns, nv, nc, nk, ie, ik, ic, iv, is, ix, ne_all
+
 #ifdef CPLX
   complex(dpc), allocatable :: Ae(:,:,:,:) ! ns, nv, nc, nk
 #else
   real(dp), allocatable :: Ae(:,:,:,:) ! ns, nv, nc, nk
 #endif
+
   real(dp) :: energy, Egap, Eb, ipr
   real(dp), allocatable :: Asum(:), d2(:), e_save(:)! j%ne
   real(dp), allocatable :: Ec(:,:) ! nc, nk
@@ -28,6 +34,13 @@ program ebg
   type(joblist) :: jobs
   logical :: lfile
   integer :: ierr
+#ifdef HDF5
+  integer :: ncplx ! 1 for real, 2 for cplx
+  real(dp), allocatable :: Ae_t(:,:,:,:,:,:,:) ! ncplx, ns, nv, nc, nk, ne, 1
+  !real(dp), allocatable :: energy_all()
+  integer(HID_T) :: file_id, group_id_1, group_id_2, dataset_id! hdf5 id
+  integer(hsize_t) :: dims1(1), dims2(2), dims7(7), offset7(7)
+#endif
   character(len=80) :: filename,something
   character(len=11) :: cdate
   character(len=14) :: ctime
@@ -67,11 +80,39 @@ program ebg
 
   write(881,*)
   write(881,*) "reading file eigenvectors headers"
+#ifdef HDF5
+  dims1=1
+  call h5open_f(ierr)
+  call h5fopen_f("eigenvectors.h5", H5F_ACC_RDONLY_F, file_id, ierr)
+  call h5gopen_f(file_id, "exciton_header", group_id_1, ierr)
+  call h5gopen_f(group_id_1, "params", group_id_2, ierr)
+
+  call h5dopen_f(group_id_2, "ns", dataset_id, ierr)
+  call h5dread_f(dataset_id, H5T_NATIVE_INTEGER, ns, dims1, ierr)
+  call h5dclose_f(dataset_id, ierr)
+
+  call h5dopen_f(group_id_2, "nv", dataset_id, ierr)
+  call h5dread_f(dataset_id, H5T_NATIVE_INTEGER, nv, dims1, ierr)
+  call h5dclose_f(dataset_id, ierr)
+
+  call h5dopen_f(group_id_2, "nc", dataset_id, ierr)
+  call h5dread_f(dataset_id, H5T_NATIVE_INTEGER, nc, dims1, ierr)
+  call h5dclose_f(dataset_id, ierr)
+
+  call h5gclose_f(group_id_2, ierr)
+  call h5gopen_f(group_id_1, "kpoints", group_id_2, ierr)
+
+  call h5dopen_f(group_id_2, "nk", dataset_id, ierr)
+  call h5dread_f(dataset_id, H5T_NATIVE_INTEGER, nk, dims1, ierr)
+  call h5dclose_f(dataset_id, ierr)
+
+#else
   open(unit=10,file="eigenvectors",form='unformatted',status='old')
   read(10) ns
   read(10) nv
   read(10) nc
   read(10) nk
+#endif
   write(881,'(a,i0)') " ns = ", ns
   write(881,'(a,i0)') " nv = ", nv
   write(881,'(a,i0)') " nc = ", nc
@@ -105,7 +146,16 @@ program ebg
 
 
   allocate(kk(3,nk))
+#ifdef HDF5
+  dims2=(/3,nk/)
+  call h5dopen_f(group_id_2, "kpts", dataset_id, ierr)
+  call h5dread_f(dataset_id, H5T_NATIVE_DOUBLE, kk, dims2, ierr)
+  call h5dclose_f(dataset_id, ierr)
+  call h5gclose_f(group_id_2, ierr)
+  call h5gclose_f(group_id_1, ierr)
+#else
   read(10) kk(:,:) ! kpoints
+#endif
 
   allocate(Ec(nc,nk))
   allocate(Ev(nv,nk))
@@ -125,24 +175,51 @@ program ebg
     write(15,*) "#exciton Eexciton(eV) Egap(eV) Ebinding(eV) IPR"
   endif
 
+#ifdef CPLX
+  ncplx=2
+#else
+  ncplx=1
+#endif
+
+#ifdef HDF5
+  ! TODO: read each exciton one by one
+  call h5gopen_f(file_id, "exciton_data", group_id_1, ierr)
+  call h5dopen_f(group_id_1, "eigenvectors", dataset_id, ierr)
+  dims7=(/ncplx, ns, nv, nc, nk, ne_all, 1/)
+  allocate(Ae_t(ncplx, ns, nv, nc, nk, ne_all, 1))
+  call h5dread_f(dataset_id, H5T_NATIVE_DOUBLE, Ae_t, dims7, ierr)
+#endif
+
+  ! main loop:
   do ie = 1, jobs%ne
     Egap=0.d0
     ipr=0.d0
+#ifndef HDF5
     read(10) energy
     if (lfile .and. dabs(energy-e_save(ie))>1.e-4) then
       write(881,"(a,i0,a)") " Warning: ",ie," energy doesn't match"
       write(881,"(a,f10.6,a,f10.6)") "  eigenvalues.dat:",e_save(ie),"  eigenvectors:",energy
     endif
     read(10) Ae
+#endif
+
     do ik = 1, nk
       ipr0=0.d0
       do ic = 1, nc
         do iv = 1, nv
           do is = 1, ns
-#ifdef CPLX
-            Avcke = Ae(is,iv,ic,ik) * conjg(Ae(is,iv,ic,ik))
+#ifdef HDF5
+  #ifdef CPLX
+            Avcke = Ae_t(1,is,iv,ic,ik,ie,1)*Ae_t(1,is,iv,ic,ik,ie,1)+Ae_t(2,is,iv,ic,ik,ie,1)*Ae_t(2,is,iv,ic,ik,ie,1)
+  #else
+            Avcke = Ae_t(1,is,iv,ic,ik,ie,1)*Ae_t(1,is,iv,ic,ik,ie,1)
+  #endif
 #else
+  #ifdef CPLX
+            Avcke = Ae(is,iv,ic,ik) * conjg(Ae(is,iv,ic,ik))
+  #else
             Avcke = Ae(is,iv,ic,ik) * Ae(is,iv,ic,ik)
+  #endif
 #endif
             Egap=Egap+Avcke*(Ec(ic,ik)-Ev(iv,ik))
             Asum(ie)=Asum(ie)+Avcke
@@ -154,18 +231,27 @@ program ebg
     enddo ! ik
     ipr=Asum(ie)*Asum(ie)/ipr
 
-    Eb=Egap-energy
+    Eb=Egap-e_save(ie)
     if (Eb<1.d-6) then
       write(881,"(a,i0,a,f9.5,a)") " Warning: ", ie, " negative Eb ", Eb, " eV"
     endif 
     if (lfile) then
-      write(15,"(i6, 3f9.5,f12.5,e16.8)") ie, energy, Egap, Eb, ipr, d2(ie)
+      write(15,"(i6, 3f9.5,f12.5,e16.8)") ie, e_save(ie), Egap, Eb, ipr, d2(ie)
     else
-      write(15,"(i6, 3f9.5,f12.5)") ie, energy, Egap, Eb, ipr
+      write(15,"(i6, 3f9.5,f12.5)") ie, e_save(ie), Egap, Eb, ipr
     endif
     
   enddo ! ie
+
+#ifdef HDF5
+  call h5dclose_f(dataset_id, ierr)
+  call h5gclose_f(group_id_1, ierr)
+  call h5fclose_f(file_id, ierr)
+  call h5close_f(ierr)
+  deallocate(Ae_t)
+#else
   close(10)
+#endif
   close(15)
   deallocate(Ae)
 

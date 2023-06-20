@@ -1,7 +1,6 @@
-F77     = gfortran -std=legacy
+#F77     = gfortran -std=legacy
 F90     = gfortran -ffree-form -ffree-line-length-0
 
-F90free = -ffree-form
 FPP     = cpp
 #FPP     = gfortran -cpp
 
