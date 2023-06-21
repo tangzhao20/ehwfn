@@ -7,20 +7,28 @@
 
 ! input: nwstates, iwstates, nbsv
 ! read from files: labelinfo.dat(wannier), band.dat(wannier), kmap.dat(paratec), eqp.dat(BSE), eigenvectors(BSE)
+! read from files: labelinfo.dat(wannier), band.dat(wannier), kgrid.log(BGW/MeanField/ESPRESSO/grid.x), eqp.dat(BSE), eigenvectors.h5(BSE)
 ! write to files: ebands_istate.dat
 
 program ebands
   use typedefs
   use nrtype
   use mat
+#ifdef HDF5
+  use hdf5
+#endif
   implicit none
   integer :: ns, nv, nc, nk, nh, noutk, nbsk, nbsv, nrk
-  integer :: ie, ik, ic, iv, is, iw, ih, ix, iy, iz, ib, ioutk, ibsk, irk, ik2, ib2, ikvbm
+  integer :: ie, ik, ic, iv, is, iw, ih, ix, iy, iz, ib, ioutk, ibsk, irk, ik2, ib2, ikvbm, ne_all
   logical :: lbreak
-#ifdef CPLX
-  complex(dpc), allocatable :: Ae(:,:,:,:) ! ns, nv, nc, nk
+#ifdef HDF5
+  real(dp), allocatable :: Ae_t(:,:,:,:,:,:,:) ! ncplx, ns, nv, nc, nk, ne, 1
 #else
+  #ifdef CPLX
+  complex(dpc), allocatable :: Ae(:,:,:,:) ! ns, nv, nc, nk
+  #else
   real(dp), allocatable :: Ae(:,:,:,:) ! ns, nv, nc, nk
+  #endif
 #endif
   real(dp), allocatable :: Ae_rk(:,:,:,:) ! ns, nv, nc, nrk
   real(dp), allocatable :: Abk2(:,:)! nc+nv, noutk
@@ -41,6 +49,11 @@ program ebands
   
   real(dp) :: kp(3), kpvbm(3), d1, d2, somefloat, ef, efall, vbmtmp
   type(joblist) :: jobs
+#ifdef HDF5
+  integer :: ncplx ! 1 for real, 2 for cplx
+  integer(HID_T) :: file_id, group_id_1, group_id_2, dataset_id! hdf5 id
+  integer(hsize_t) :: dims1(1), dims2(2), dims7(7), offset7(7)
+#endif
   integer :: ierr, someint
   character(len=80) :: filename
   character(len=80) :: something
@@ -92,22 +105,59 @@ program ebands
   write(881,'(a,i0)') " nh = ", nh
 
   write(881,*)
+#ifdef HDF5
+  write(881,*) "reading file eigenvectors.h5 headers"
+  dims1=1
+  call h5open_f(ierr)
+  call h5fopen_f("eigenvectors.h5", H5F_ACC_RDONLY_F, file_id, ierr)
+  call h5gopen_f(file_id, "exciton_header", group_id_1, ierr)
+  call h5gopen_f(group_id_1, "params", group_id_2, ierr)
+
+  call h5dopen_f(group_id_2, "ns", dataset_id, ierr)
+  call h5dread_f(dataset_id, H5T_NATIVE_INTEGER, ns, dims1, ierr)
+  call h5dclose_f(dataset_id, ierr)
+
+  call h5dopen_f(group_id_2, "nv", dataset_id, ierr)
+  call h5dread_f(dataset_id, H5T_NATIVE_INTEGER, nv, dims1, ierr)
+  call h5dclose_f(dataset_id, ierr)
+
+  call h5dopen_f(group_id_2, "nc", dataset_id, ierr)
+  call h5dread_f(dataset_id, H5T_NATIVE_INTEGER, nc, dims1, ierr)
+  call h5dclose_f(dataset_id, ierr)
+
+  call h5gclose_f(group_id_2, ierr)
+  call h5gopen_f(group_id_1, "kpoints", group_id_2, ierr)
+
+  call h5dopen_f(group_id_2, "nk", dataset_id, ierr)
+  call h5dread_f(dataset_id, H5T_NATIVE_INTEGER, nk, dims1, ierr)
+  call h5dclose_f(dataset_id, ierr)
+
+#else
   write(881,*) "reading file eigenvectors headers"
   open(unit=10,file="eigenvectors",form='unformatted',status='old')
-
   read(10) ns
   read(10) nv
   read(10) nc
   read(10) nk
+#endif
 
   write(881,'(a,i0)') " ns = ", ns
   write(881,'(a,i0)') " nv = ", nv
   write(881,'(a,i0)') " nc = ", nc
   write(881,'(a,i0)') " nk = ", nk
+  ne_all=ns*nv*nc*nk ! TODO: read from eigenvectors.h5
 
   allocate(kk(3,nk))
+#ifdef HDF5
+  dims2=(/3,nk/)
+  call h5dopen_f(group_id_2, "kpts", dataset_id, ierr)
+  call h5dread_f(dataset_id, H5T_NATIVE_DOUBLE, kk, dims2, ierr)
+  call h5dclose_f(dataset_id, ierr)
+  call h5gclose_f(group_id_2, ierr)
+  call h5gclose_f(group_id_1, ierr) 
+#else
   read(10) kk(:,:) ! kpoints
-
+#endif
   do ik=1,nk
     if (kk(1,ik)< -1.d-6) then
       kk(1,ik)=kk(1,ik)+1
@@ -144,24 +194,72 @@ program ebands
 
 
   write(881,*) 
-  write(881,*) "reading kmap.dat file"
-  open(unit=23,file="kmap.dat",form="formatted",status="old")
-  read(23,*)
-  read(23,*) nrk
-  allocate(kmap(nk))
-  allocate(kcount(nrk))
-  kcount=0
-  do ik=1, nk
-    read(23,*) something, kp(:), irk
-    kcount(irk)=kcount(irk)+1
-    do ik2=1,nk
-      if (max(dabs(kk(1,ik2)-kp(1)),dabs(kk(2,ik2)-kp(2)),dabs(kk(3,ik2)-kp(3)))<1.d-6) then
-        kmap(ik2)=irk
+  open(unit=23,file="kmap.dat",form="formatted",status="old", iostat=ierr)
+  if (ierr==0) then
+    write(881,*) "reading kmap.dat file"
+    read(23,*)
+    read(23,*) nrk
+    allocate(kmap(nk))
+    allocate(kcount(nrk))
+    kcount=0
+    do ik=1, nk
+      read(23,*) something, kp(:), irk
+      kcount(irk)=kcount(irk)+1
+      do ik2=1,nk
+        if (max(dabs(kk(1,ik2)-kp(1)),dabs(kk(2,ik2)-kp(2)),dabs(kk(3,ik2)-kp(3)))<1.d-6) then
+          kmap(ik2)=irk
+          exit
+        endif
+      enddo
+    enddo
+    close(23)
+  else
+    open(unit=25,file="kgrid.log",form="formatted",status="old", iostat=ierr)
+    if (ierr/=0) then
+      write(*,*) "Error: neither kmap.dat (prt) or kgrid.log (qe) exist"
+      stop
+    endif
+    write(881,*) "reading kgrid.log file"
+    do
+      read(25,'(a)',iostat=ierr) something
+      if (ierr/=0) then
+        write(*,*) "Error: EOF in kgrid.log"
+        stop
+      endif
+      if (trim(something) .eq. "k-points in the irreducible wedge") then
         exit
       endif
     enddo
-  enddo
-  close(23)
+    read(25,*) nrk
+    allocate(kmap(nk))
+    allocate(kcount(nrk))
+    do irk=1,nrk
+      read(25,*) something, something, something, something, something, ik
+      kcount(irk)=1
+      kmap(ik)=irk
+    enddo ! irk
+    rewind(25)
+    do
+      read(25,'(a)',iostat=ierr) something
+      if (ierr/=0) then
+        write(*,*) "Error: EOF in kgrid.log"
+        stop
+      endif
+      if (trim(something) .eq. "k-points in the original uniform grid") then
+        exit
+      endif
+    enddo
+    read(25,*) ! nk
+    do ik=1,nk
+      read(25,*) something, something, something, something, something, ik2
+      if (ik2/=0) then
+        kmap(ik)=kmap(ik2)
+        kcount(kmap(ik))=kcount(kmap(ik))+1
+      endif
+    enddo ! ik
+    close(25)
+  endif
+    
 
   write(881,*)
   write(881,*) "reading band.dat file"
@@ -191,7 +289,6 @@ program ebands
 !  enddo
 !  write(881,'(a,i0)') " nbsv = ", nbsv
 !  rewind(22)
-
   allocate(eqp(nv+nc,nbsk))
   allocate(eqpx(nbsk))
 
@@ -355,24 +452,40 @@ program ebands
   write(881,*)
   write(881,*) "reading file eigenvectors"
 
-  allocate(Ae(ns,nv,nc,nk))
   allocate(Ae_rk(ns,nv,nc,nrk))
-
   allocate(Abk2(nc+nv,noutk))
 
+#ifdef CPLX
+  ncplx=2
+#else
+  ncplx=1
+#endif
+#ifdef HDF5
+  ! TODO: read each exciton one by one
+  call h5gopen_f(file_id, "exciton_data", group_id_1, ierr)
+  call h5dopen_f(group_id_1, "eigenvectors", dataset_id, ierr)
+  dims7=(/ncplx, ns, nv, nc, nk, ne_all, 1/)
+  allocate(Ae_t(ncplx, ns, nv, nc, nk, ne_all, 1))
+  call h5dread_f(dataset_id, H5T_NATIVE_DOUBLE, Ae_t, dims7, ierr)
+#else
+  allocate(Ae(ns,nv,nc,nk))
+#endif
 
   do ie = 1, jobs%ne
     if (lwwfn(ie) .eqv. .false.) then
+#ifndef HDF5
       read(10) ! energy(ie)
       read(10) ! Aread(:)
+#endif
       cycle
     endif
 
     Abk2=0.d0
 
-
+#ifndef HDF5
     read(10) ! energy(ie)
     read(10) Ae
+#endif
 
     Ae_rk=0.d0
 
@@ -380,10 +493,18 @@ program ebands
       do ic = 1, nc
         do iv = 1, nv
           do is = 1, ns
-#ifdef CPLX
-            Ae_rk(is,iv,ic,kmap(ik))=Ae_rk(is,iv,ic,kmap(ik))+dble(Ae(is,iv,ic,ik) * conjg(Ae(is,iv,ic,ik)))
+#ifdef HDF5
+  #ifdef CPLX
+            Ae_rk(is,iv,ic,kmap(ik))=Ae_rk(is,iv,ic,kmap(ik))+Ae_t(1,is,iv,ic,ik,ie,1)**2+Ae_t(2,is,iv,ic,ik,ie,1)**2
+  #else
+            Ae_rk(is,iv,ic,kmap(ik))=Ae_rk(is,iv,ic,kmap(ik))+Ae_t(1,is,iv,ic,ik,ie,1)**2
+  #endif
 #else
+  #ifdef CPLX
+            Ae_rk(is,iv,ic,kmap(ik))=Ae_rk(is,iv,ic,kmap(ik))+dble(Ae(is,iv,ic,ik) * conjg(Ae(is,iv,ic,ik)))
+  #else
             Ae_rk(is,iv,ic,kmap(ik))=Ae_rk(is,iv,ic,kmap(ik))+Ae(is,iv,ic,ik)**2
+  #endif
 #endif
           enddo ! is
         enddo ! iv
@@ -426,8 +547,16 @@ program ebands
     enddo ! ib
   enddo ! ie
 
+#ifdef HDF5
+  call h5dclose_f(dataset_id, ierr)
+  call h5gclose_f(group_id_1, ierr)
+  call h5fclose_f(file_id, ierr)
+  call h5close_f(ierr)
+  deallocate(Ae_t)
+#else
   close(10)
   deallocate(Ae)
+#endif
   deallocate(Ae_rk)
   deallocate(Abk2)
 

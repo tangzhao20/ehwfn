@@ -19,10 +19,14 @@ program ebg
   implicit none
   integer :: ns, nv, nc, nk, ie, ik, ic, iv, is, ix, ne_all
 
-#ifdef CPLX
-  complex(dpc), allocatable :: Ae(:,:,:,:) ! ns, nv, nc, nk
+#ifdef HDF5
+  real(dp), allocatable :: Ae_t(:,:,:,:,:,:,:) ! ncplx, ns, nv, nc, nk, ne, 1
 #else
+  #ifdef CPLX
+  complex(dpc), allocatable :: Ae(:,:,:,:) ! ns, nv, nc, nk
+  #else
   real(dp), allocatable :: Ae(:,:,:,:) ! ns, nv, nc, nk
+  #endif
 #endif
 
   real(dp) :: energy, Egap, Eb, ipr
@@ -36,8 +40,6 @@ program ebg
   integer :: ierr
 #ifdef HDF5
   integer :: ncplx ! 1 for real, 2 for cplx
-  real(dp), allocatable :: Ae_t(:,:,:,:,:,:,:) ! ncplx, ns, nv, nc, nk, ne, 1
-  !real(dp), allocatable :: energy_all()
   integer(HID_T) :: file_id, group_id_1, group_id_2, dataset_id! hdf5 id
   integer(hsize_t) :: dims1(1), dims2(2), dims7(7), offset7(7)
 #endif
@@ -79,8 +81,8 @@ program ebg
   endif ! lfile
 
   write(881,*)
-  write(881,*) "reading file eigenvectors headers"
 #ifdef HDF5
+  write(881,*) "reading file eigenvectors.h5 headers"
   dims1=1
   call h5open_f(ierr)
   call h5fopen_f("eigenvectors.h5", H5F_ACC_RDONLY_F, file_id, ierr)
@@ -107,6 +109,7 @@ program ebg
   call h5dclose_f(dataset_id, ierr)
 
 #else
+  write(881,*) "reading file eigenvectors headers"
   open(unit=10,file="eigenvectors",form='unformatted',status='old')
   read(10) ns
   read(10) nv
@@ -164,7 +167,6 @@ program ebg
   write(881,*)
   write(881,*) "reading file eigenvectors"
 
-  allocate(Ae(ns,nv,nc,nk))
   allocate(Asum(jobs%ne))
   Asum=0.d0
 
@@ -180,7 +182,6 @@ program ebg
 #else
   ncplx=1
 #endif
-
 #ifdef HDF5
   ! TODO: read each exciton one by one
   call h5gopen_f(file_id, "exciton_data", group_id_1, ierr)
@@ -188,6 +189,8 @@ program ebg
   dims7=(/ncplx, ns, nv, nc, nk, ne_all, 1/)
   allocate(Ae_t(ncplx, ns, nv, nc, nk, ne_all, 1))
   call h5dread_f(dataset_id, H5T_NATIVE_DOUBLE, Ae_t, dims7, ierr)
+#else
+  allocate(Ae(ns,nv,nc,nk))
 #endif
 
   ! main loop:
@@ -210,15 +213,15 @@ program ebg
           do is = 1, ns
 #ifdef HDF5
   #ifdef CPLX
-            Avcke = Ae_t(1,is,iv,ic,ik,ie,1)*Ae_t(1,is,iv,ic,ik,ie,1)+Ae_t(2,is,iv,ic,ik,ie,1)*Ae_t(2,is,iv,ic,ik,ie,1)
+            Avcke = Ae_t(1,is,iv,ic,ik,ie,1)**2 + Ae_t(2,is,iv,ic,ik,ie,1)**2
   #else
-            Avcke = Ae_t(1,is,iv,ic,ik,ie,1)*Ae_t(1,is,iv,ic,ik,ie,1)
+            Avcke = Ae_t(1,is,iv,ic,ik,ie,1)**2
   #endif
 #else
   #ifdef CPLX
             Avcke = Ae(is,iv,ic,ik) * conjg(Ae(is,iv,ic,ik))
   #else
-            Avcke = Ae(is,iv,ic,ik) * Ae(is,iv,ic,ik)
+            Avcke = Ae(is,iv,ic,ik)**2
   #endif
 #endif
             Egap=Egap+Avcke*(Ec(ic,ik)-Ev(iv,ik))
@@ -251,9 +254,9 @@ program ebg
   deallocate(Ae_t)
 #else
   close(10)
+  deallocate(Ae)
 #endif
   close(15)
-  deallocate(Ae)
 
   write(881,*)
   if (maxval(Asum)<1.d0+1.d-6 .and. minval(Asum)>1.d0-1.d-6) then
