@@ -74,4 +74,9 @@ make
 
 ---
 
+## Reference
+Please find <https://doi.org/10.1103/PhysRevApplied.17.034068>
+
+---
+
 ZT
