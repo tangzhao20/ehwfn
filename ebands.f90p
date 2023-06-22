@@ -348,7 +348,8 @@ program ebands
               outx(ioutk)=xhi(ih)
               lbreak=.true.
             endif
-            if (ih<nh) then
+            if (ih<nh .and. dabs(xhi(ih)-xhi(ih+1))>1.d-6) then
+              
               if (dpl(kp,khi(:,ih),khi(:,ih+1))<=1.d-5 .and. dot(kp-khi(:,ih),khi(:,ih+1)-khi(:,ih))>1.d-5 .and. dot(kp-khi(:,ih+1),khi(:,ih)-khi(:,ih+1))>1.d-5) then
                 noutk=noutk+1
                 ioutk=noutk
