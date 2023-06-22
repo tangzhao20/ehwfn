@@ -1,9 +1,13 @@
 ## ebg
+
 Find the non-interacting transition energy $E_\mathrm{g}^S$:
+
 $$
 E_\mathrm{g}^S=\sum_{vck}((A_{vck}^S)^2(E_{ck}-E_{v(k+q)})).
 $$
+
 Calculate the IPR of the e-h amplitude:
+
 $$
 \mathrm{IPR}^S=(\sum_{vck}(A_{vck}^S)^2)^2/\sum_{vck}(A_{vck}^S)^4.
 $$
@@ -11,7 +15,9 @@ $$
 ---
 
 ## pdeh
+
 Calculate the e-h pair participation ratio of exciton states:
+
 $$
 D_\mathrm{eh}^S(\omega)=\sum_{vck}(A_{vck}^S)^2\delta(E_{ck}-E_{vk}-\omega).
 $$
@@ -19,7 +25,9 @@ $$
 ---
 
 ## ewfn
+
 Calculate the k-dependent pair amplitude of exciton states:
+
 $$
 |A_k^S|^2=\sum_{vc}|A_{vck}^S|^2.
 $$
@@ -27,12 +35,15 @@ $$
 ---
 
 ## ebands
+
 Calculate the electron/hole amplitude of exciton states and
 prepare for generating weighted band structure plots:
+
 $$
 |A_{vk}^S|^2=\sum_c|A_{vck}^S|^2,\\
-|A_{ck}^S|^2=\sum_v|A_{vck}^S|^2.
+|A_{ck}^S|^2=\sum_v|A_{vck}^S|^2,
 $$
+
 where k is on the band structure path.
 
 ---
