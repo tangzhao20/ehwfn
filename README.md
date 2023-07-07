@@ -40,10 +40,10 @@ Calculate the electron/hole amplitude of exciton states and
 prepare for generating weighted band structure plots:
 
 $$
-|A_{vk}^S|^2&=\sum_c|A_{vck}^S|^2,
-$$
-$$
+\begin{split}
+|A_{vk}^S|^2&=\sum_c|A_{vck}^S|^2,\\
 |A_{ck}^S|^2&=\sum_v|A_{vck}^S|^2,
+\end{split}
 $$
 
 where k is on the band structure path.
@@ -51,7 +51,7 @@ where k is on the band structure path.
 ---
 
 ## Input files
-[input](input)
+[input](input)  
 eigenvectors (from bse absorption)  
 eqp.dat (and eqp\_q.dat if a shifted grid is used)  
 OUT (for the b vectors only)  
