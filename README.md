@@ -1,4 +1,4 @@
-## ebg
+## [ebg](ebg.f90p)
 
 Find the non-interacting transition energy $E_\mathrm{g}^S$:
 
@@ -14,7 +14,7 @@ $$
 
 ---
 
-## pdeh
+## [pdeh](pdeh.f90p)
 
 Calculate the e-h pair participation ratio of exciton states:
 
@@ -24,7 +24,7 @@ $$
 
 ---
 
-## ewfn
+## [ewfn](ewfn.f90p)
 
 Calculate the k-dependent pair amplitude of exciton states:
 
@@ -34,14 +34,16 @@ $$
 
 ---
 
-## ebands
+## [ebands](ebands.f90p)
 
 Calculate the electron/hole amplitude of exciton states and
 prepare for generating weighted band structure plots:
 
 $$
-|A_{vk}^S|^2=\sum_c|A_{vck}^S|^2,\\
-|A_{ck}^S|^2=\sum_v|A_{vck}^S|^2,
+|A_{vk}^S|^2&=\sum_c|A_{vck}^S|^2,
+$$
+$$
+|A_{ck}^S|^2&=\sum_v|A_{vck}^S|^2,
 $$
 
 where k is on the band structure path.
@@ -49,9 +51,9 @@ where k is on the band structure path.
 ---
 
 ## Input files
-input  
+[input](input)
 eigenvectors (from bse absorption)  
-eqp.dat (and eqp_q.dat if a shifted grid is used)  
+eqp.dat (and eqp\_q.dat if a shifted grid is used)  
 OUT (for the b vectors only)  
 labelinfo.dat gw.dat eqp.dat kmap.dat/kgrid.log (ebands.x)  
 
@@ -67,7 +69,7 @@ pdeh_\*.dat
 
 ## Install
 
-Modify mkf.mk then 
+Copy mkf.mk from the [config](config) directory. Modify as needed. Then 
 ```
 make
 ```

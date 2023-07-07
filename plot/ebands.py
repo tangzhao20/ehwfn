@@ -40,6 +40,7 @@ if iwstates==[] :
                 iwstates.append(i+1)
             break
 
+# TODO: split x into paths
 f0=open('band.dat')
 line=f0.readlines()
 f0.close()
@@ -152,9 +153,9 @@ for ie in range(len(iwstates)) :
         f2.close()
     fig = plt.figure(figsize=(5,3.75))
     
-    gs0=fig.add_gridspec(1,len(x1label),wspace=0.0,hspace=0.00,left=0.14,right=0.98,top=0.97, bottom=0.07,width_ratios=width)
+    gs0=fig.add_gridspec(1,len(x1label),wspace=0.0,hspace=0.00,left=0.14,right=0.98,top=0.97,bottom=0.07,width_ratios=width)
     ax=[]
-    
+
     for ip in range(np):
         ax.append(fig.add_subplot(gs0[ip]))
         ax[-1].axhline(linewidth=1,color=colpal[3],zorder=1)
