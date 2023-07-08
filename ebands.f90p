@@ -50,11 +50,11 @@ program ebands
   integer(HID_T) :: file_id, data_id, dataspace_id, memspace_id ! hdf5 id
   integer(HSIZE_T) :: dims1(1), dims2(2), dims7(7), offset7(7), count7(7)
 #else
-  #ifdef CPLX
+#ifdef CPLX
   complex(dpc), allocatable :: Ae(:,:,:,:) ! ns, nv, nc, nk
-  #else
+#else
   real(dp), allocatable :: Ae(:,:,:,:) ! ns, nv, nc, nk
-  #endif
+#endif
 #endif
 
   integer :: someint
@@ -377,7 +377,6 @@ program ebands
     write(881,'(i5,4f8.3)') outind(ih), outx(ih), kk(:,outind(ih))
   enddo
 
-  
   efall=maxval(eqpall(nv,:))-eqp(nv,ikvbm)+maxval(eqp(nv,:))
   ! TODO: if the VBM is not at the k-points sampling in eqp.dat
   do ik=1,nk
@@ -451,11 +450,11 @@ program ebands
   dims1=(/ne_all/)
   call h5dopen_f(file_id, "exciton_data/eigenvectors", data_id, ierr)
 
-  #ifdef CPLX
+#ifdef CPLX
   ncplx=2
-  #else
+#else
   ncplx=1
-  #endif
+#endif
   dims7=(/ncplx, ns, nv, nc, nk, ne_all, 1/)
   count7=(/ncplx, ns, nv, nc, nk, 1, 1/)
   dims1=product(count7)
@@ -494,17 +493,17 @@ program ebands
         do iv = 1, nv
           do is = 1, ns
 #ifdef HDF5
-  #ifdef CPLX
+#ifdef CPLX
             Ae_rk(is,iv,ic,kmap(ik))=Ae_rk(is,iv,ic,kmap(ik))+Ae(1,is,iv,ic,ik)**2+Ae(2,is,iv,ic,ik)**2
-  #else
-            Ae_rk(is,iv,ic,kmap(ik))=Ae_rk(is,iv,ic,kmap(ik))+Ae(1,is,iv,ic,ik)**2
-  #endif
 #else
-  #ifdef CPLX
+            Ae_rk(is,iv,ic,kmap(ik))=Ae_rk(is,iv,ic,kmap(ik))+Ae(1,is,iv,ic,ik)**2
+#endif
+#else
+#ifdef CPLX
             Ae_rk(is,iv,ic,kmap(ik))=Ae_rk(is,iv,ic,kmap(ik))+dble(Ae(is,iv,ic,ik) * conjg(Ae(is,iv,ic,ik)))
-  #else
+#else
             Ae_rk(is,iv,ic,kmap(ik))=Ae_rk(is,iv,ic,kmap(ik))+Ae(is,iv,ic,ik)**2
-  #endif
+#endif
 #endif
           enddo ! is
         enddo ! iv

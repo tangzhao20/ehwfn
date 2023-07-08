@@ -35,11 +35,11 @@ program ebg
   integer(HID_T) :: file_id, data_id, dataspace_id, memspace_id ! hdf5 id
   integer(HSIZE_T) :: dims1(1), dims2(2), dims7(7), offset7(7), count7(7)
 #else
-  #ifdef CPLX
+#ifdef CPLX
   complex(dpc), allocatable :: Ae(:,:,:,:) ! ns, nv, nc, nk
-  #else
+#else
   real(dp), allocatable :: Ae(:,:,:,:) ! ns, nv, nc, nk
-  #endif
+#endif
 #endif
 
   character(len=80) :: filename,something
@@ -178,11 +178,11 @@ program ebg
   call h5dclose_f(data_id, ierr)
   call h5dopen_f(file_id, "exciton_data/eigenvectors", data_id, ierr)
 
-  #ifdef CPLX
+#ifdef CPLX
   ncplx=2
-  #else
+#else
   ncplx=1
-  #endif
+#endif
   dims7=(/ncplx, ns, nv, nc, nk, ne_all, 1/)
   count7=(/ncplx, ns, nv, nc, nk, 1, 1/)
   dims1=product(count7)
@@ -218,17 +218,17 @@ program ebg
         do iv = 1, nv
           do is = 1, ns
 #ifdef HDF5
-  #ifdef CPLX
-            Avcke = Ae(1,is,iv,ic,ik)**2 + Ae(2,is,iv,ic,ik)**2
-  #else
-            Avcke = Ae(1,is,iv,ic,ik)**2
-  #endif
+#ifdef CPLX
+          Avcke = Ae(1,is,iv,ic,ik)**2 + Ae(2,is,iv,ic,ik)**2
 #else
-  #ifdef CPLX
-            Avcke = Ae(is,iv,ic,ik) * conjg(Ae(is,iv,ic,ik))
-  #else
-            Avcke = Ae(is,iv,ic,ik)**2
-  #endif
+          Avcke = Ae(1,is,iv,ic,ik)**2
+#endif
+#else
+#ifdef CPLX
+          Avcke = Ae(is,iv,ic,ik) * conjg(Ae(is,iv,ic,ik))
+#else
+          Avcke = Ae(is,iv,ic,ik)**2
+#endif
 #endif
             Egap=Egap+Avcke*(Ec(ic,ik)-Ev(iv,ik))
             Asum(ie)=Asum(ie)+Avcke
