@@ -14,6 +14,9 @@ nbsv 17
 # Smearing parameter (in eV) of the Gaussian smearing. Default is 0.05. Used in ehpd.
 sigma 0.05
 
-# find what to write in the out.dat. These parameters are not required.
+# Find what to write in the out.dat. These parameters are not required.
 # lwbands .true.
 # lwkpoints .false.
+
+# Is the eigenvectors file in .h5 format (eigenvectors.h5)? Default is True.
+lhdf5 .true.

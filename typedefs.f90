@@ -8,6 +8,7 @@ module typedefs
     logical :: lwbands
     logical :: lwkpoints
     logical :: lsquare
+    logical :: lhdf5
     integer :: nwstates
     integer, pointer :: iwstates(:)
     real(dp) :: sigma

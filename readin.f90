@@ -13,11 +13,11 @@ subroutine readin(jobs)
   jobs%ne = 0
   jobs%lwbands = .false.
   jobs%lwkpoints = .true.
+  jobs%lhdf5 = .true.
   jobs%nwstates = 0
   jobs%sigma = 0.05
   jobs%lsquare = .true.
   jobs%nbsv=0
-
 
   inquire(file="input",exist=lfile)
   if (lfile) then
@@ -38,7 +38,6 @@ subroutine readin(jobs)
       keyword=line(1:scan(line," ")-1)
       line=adjustl(line(scan(line," ")+1:1024))
   
-  
       if(trim(keyword).eq.'ne') then
         read(line,*,iostat=ierr)  jobs%ne
       
@@ -50,6 +49,9 @@ subroutine readin(jobs)
   
       elseif(trim(keyword).eq.'lsquare') then
         read(line,*,iostat=ierr)  jobs%lsquare
+
+      elseif(trim(keyword).eq.'lhdf5') then
+        read(line,*,iostat=ierr)  jobs%lhdf5
   
       elseif(trim(keyword).eq.'nwstates') then
         read(line,*,iostat=ierr) jobs%nwstates
@@ -83,12 +85,12 @@ subroutine readin(jobs)
     write(881,*) "input file doesn`t exist. the default values are used"
   endif ! lfile
   
-  
   if (jobs%ne /= 0) then
     write(881,'(a,i0)') " ne = ", jobs%ne
   endif
   write(881,'(a,l1)') " lwbands = ", jobs%lwbands
   write(881,'(a,l1)') " lwkpoints = ", jobs%lwkpoints
+  write(881,'(a,l1)') " lhdf5 = ", jobs%lhdf5
   if (jobs%nwstates .ne. 0) then
     write(881,'(a,i0)') " nwstates = ", jobs%nwstates
     write(881,'(a)') " iwstates = "
