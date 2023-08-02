@@ -384,7 +384,6 @@ program ebands
     write(881,'(i5,4f8.3)') outind(ih), outx(ih), kk(:,outind(ih))
   enddo
 
-  
   efall=maxval(eqpall(nv,:))-eqp(nv,ikvbm)+maxval(eqp(nv,:))
   ! TODO: if the VBM is not at the k-points sampling in eqp.dat
   do ik=1,nk
