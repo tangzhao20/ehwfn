@@ -69,13 +69,13 @@ subroutine readin(jobs)
   
       else
         write(881,*) 'ERROR: Unexpected keyword ', trim(keyword), ' was found in input.'
-        call die("Unexpected keyword "//trim(keyword)//" found in input",0)
+        call die("Unexpected keyword in input, see out.dat",0)
       endif
   
       if (ierr/=0) then
         write(881,*) 'ERROR: Fail when read ', trim(keyword), ' in input.'
         write(881,*) line
-        call die("Fail when read "//trim(keyword)//" in input",0)
+        call die("Fail when read in input, see out.dat",0)
       endif
         
     enddo ! read lines
