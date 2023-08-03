@@ -26,16 +26,11 @@ cplx:
 
 .SUFFIXES: .f90p .f90 $(SUFFIXES)
 
-
-#.f90.o:
-#	$(F90) -c $(FOPTS) $*.f90 $(LIBS)
-
 .f90.o:
 	$(FPP) $(DEFS) $(TYPEFLAG) $< > $*.p.f90
 	$(F90) -c $(FOPTS) $*.p.f90 $(LIBS)
 	mv $*.p.o $*.o
 
-	
 %.x:
 	$(LINK) $(FOPTS) -o $@ $^ $(LIBS)
 

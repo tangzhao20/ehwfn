@@ -13,7 +13,11 @@ subroutine readin(jobs)
   jobs%ne = 0
   jobs%lwbands = .false.
   jobs%lwkpoints = .true.
+#ifdef HDF5
   jobs%lhdf5 = .true.
+#else
+  jobs%lhdf5 = .false.
+#endif
   jobs%nwstates = 0
   jobs%sigma = 0.05
   jobs%lsquare = .true.
@@ -52,6 +56,12 @@ subroutine readin(jobs)
 
       elseif(trim(keyword).eq.'lhdf5') then
         read(line,*,iostat=ierr)  jobs%lhdf5
+#ifndef HDF5
+        if (jobs%lhdf5 .eq. .true.) then
+            write(881,*) "The code is compiled without the HDF5 library. lhdf5 is set to .false."
+            jobs%lhdf5=.false.
+        endif
+#endif
   
       elseif(trim(keyword).eq.'nwstates') then
         read(line,*,iostat=ierr) jobs%nwstates
