@@ -52,7 +52,7 @@ where k is on the band structure path.
 
 ## Input files
 [input](input)  
-eigenvectors (from bse absorption)  
+eigenvectors or eigenvectors.h5 (from bse absorption)
 eqp.dat (and eqp\_q.dat if a shifted grid is used)  
 OUT (for the b vectors only)  
 labelinfo.dat gw.dat eqp.dat kmap.dat/kgrid.log (ebands.x)  
