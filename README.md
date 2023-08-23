@@ -1,4 +1,4 @@
-## [ebg](ebg.f90p)
+## [ebg](ebg.f90)
 
 Find the non-interacting transition energy $E_\mathrm{g}^S$:
 
@@ -14,7 +14,7 @@ $$
 
 ---
 
-## [pdeh](pdeh.f90p)
+## [pdeh](pdeh.f90)
 
 Calculate the e-h pair participation ratio of exciton states:
 
@@ -24,7 +24,7 @@ $$
 
 ---
 
-## [ewfn](ewfn.f90p)
+## [ewfn](ewfn.f90)
 
 Calculate the k-dependent pair amplitude of exciton states:
 
@@ -34,7 +34,7 @@ $$
 
 ---
 
-## [ebands](ebands.f90p)
+## [ebands](ebands.f90)
 
 Calculate the electron/hole amplitude of exciton states and
 prepare for generating weighted band structure plots:

@@ -57,7 +57,7 @@ subroutine readin(jobs)
       elseif(trim(keyword).eq.'lhdf5') then
         read(line,*,iostat=ierr)  jobs%lhdf5
 #ifndef HDF5
-        if (jobs%lhdf5 .eq. .true.) then
+        if (jobs%lhdf5) then
             write(881,*) "The code is compiled without the HDF5 library. lhdf5 is set to .false."
             jobs%lhdf5=.false.
         endif
