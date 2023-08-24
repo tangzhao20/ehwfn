@@ -28,14 +28,15 @@ program ebands
   real(dp), allocatable :: kk(:,:) ! 3, nk
   real(dp), allocatable :: outx(:) ! noutk
   integer, allocatable :: outind(:) ! noutk
-  real(dp), allocatable :: khi(:,:) ! 3,nh
+  real(dp), allocatable :: khi(:,:) ! 3, nh
   real(dp), allocatable :: xhi(:) ! nh
   real(dp), allocatable :: eqp(:,:) ! nc+nv, nbsk
   real(dp), allocatable :: eqpx(:) ! nbsk
   real(dp), allocatable :: eqpout(:,:) ! nc+nv, noutk
   real(dp), allocatable :: eqpout2(:,:) ,eqpout3(:,:) ! nc+nv, noutk
   ! they are used to match the wannier to the inteqp
-  real(dp), allocatable :: eqpall(:,:) ! nc+nv, nk
+  real(dp), allocatable :: Ec(:,:) ! nc, nk
+  real(dp), allocatable :: Ev(:,:) ! nv, nk
   integer, allocatable :: kmap(:) ! nk
   integer, allocatable :: kcount(:) ! nrk
   
@@ -160,35 +161,16 @@ program ebands
 #ifdef HDF5
   endif
 #endif
+  kk=modulo(kk,1.0)
 
-  do ik=1,nk
-    if (kk(1,ik)< -1.d-6) then
-      kk(1,ik)=kk(1,ik)+1
-    endif
-    if (kk(2,ik)< -1.d-6) then
-      kk(2,ik)=kk(2,ik)+1
-    endif
-    if (kk(3,ik)< -1.d-6) then
-      kk(3,ik)=kk(3,ik)+1
-    endif
-  enddo
-
-  write(881,*)
-  write(881,*) "reading eqp.dat"
-  allocate(eqpall(nv+nc,nk))
-  open(unit=24,file="eqp.dat",form="formatted",status="old")
-  do ik=1,nk
-    read(24,*)
-    do ib=1,nc+nv
-      read(24,*) something, something, something, eqpall(ib,ik)
-    enddo ! ib
-  enddo ! ik
-  close(24) 
+  allocate(Ec(nc,nk))
+  allocate(Ev(nv,nk))
+  call readeqp(jobs, nv, nc, nk, Ec, Ev, kk)
 
   vbmtmp=-1.e10
   do ik=1,nk 
-    if (eqpall(nv,ik)>vbmtmp) then
-      vbmtmp=eqpall(nv,ik)
+    if (Ev(1,ik)>vbmtmp) then
+      vbmtmp=Ev(1,ik)
       kpvbm=kk(:,ik)
     endif
   enddo ! ik
@@ -384,21 +366,18 @@ program ebands
     write(881,'(i5,4f8.3)') outind(ih), outx(ih), kk(:,outind(ih))
   enddo
 
-  efall=maxval(eqpall(nv,:))-eqp(nv,ikvbm)+maxval(eqp(nv,:))
-  ! TODO: if the VBM is not at the k-points sampling in eqp.dat
-  do ik=1,nk
-    do ib=1,nc+nv
-      eqpall(ib,ik)=eqpall(ib,ik)-efall
-    enddo ! ib
-  enddo ! ik
-
   allocate(eqpout(nv+nc,noutk))
   allocate(eqpout2(nv+nc,noutk))
   allocate(eqpout3(nv+nc,noutk))
 
+  efall=maxval(Ev(1,:))-eqp(nv,ikvbm)+maxval(eqp(nv,:))
+  ! TODO: if the VBM is not at the k-points sampling in eqp.dat
   do ioutk=1,noutk
-    do ib=1,nc+nv
-      eqpout2(ib,ioutk)=eqpall(ib,outind(ioutk))
+    do iv=1,nv
+      eqpout2(nv+1-iv,ioutk)=Ev(iv,outind(ioutk))-efall
+    enddo ! ib
+    do ic=1,nc
+      eqpout2(nv+ic,ioutk)=Ec(ic,outind(ioutk))-efall
     enddo ! ib
   enddo ! ik
 
@@ -587,11 +566,12 @@ program ebands
   deallocate(outind)
   deallocate(outx)
   deallocate(eqp)
-  deallocate(eqpall)
   deallocate(eqpx)
   deallocate(eqpout)
   deallocate(eqpout2)
   deallocate(eqpout3)
+  deallocate(Ec)
+  deallocate(Ev)
 
   deallocate(kcount)
   deallocate(kmap)

@@ -24,7 +24,8 @@ subroutine readeqp(jobs,nv,nc,nk,Ec,Ev,kk)
   
     do ik = 1, nk
       read(13,*)tmp_kk(:), tmp_n
-      if (sum(dabs(kk(:,ik)-tmp_kk))>1.d-6) then
+      tmp_kk=modulo(tmp_kk,1.0)
+      if (.not. equal(kk(:,ik),tmp_kk)) then
         call die("k points of eigenvectors and eqp.dat doesn`t match")
       endif
       if (nc>tmp_n) then
@@ -89,6 +90,7 @@ subroutine readeqp(jobs,nv,nc,nk,Ec,Ev,kk)
   
     do ik = 1, nk
       read(13,*)tmp_kk(:), tmp_n
+      tmp_kk=modulo(tmp_kk,1.0)
       if (.not. equal(kk(:,ik),tmp_kk)) then
         call die("k points of eigenvectors and eqp.dat doesn`t match")
       endif
