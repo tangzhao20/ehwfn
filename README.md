@@ -59,17 +59,13 @@ pdeh_\*.dat
 
 ## Install
 
-Copy mkf.mk from the [config](config) directory. Modify as needed. Then 
+Copy `mkf.mk` from the [config](config) directory. Modify as needed. Then 
 ```
 make
 ```
 
 ## Reference
 
-Please find the following paper:
+Please find the following paper:  
+
 Zhao Tang, Greis J. Cruz, Yabei Wu, Weiyi Xia, Fanhao Jia, Wenqing Zhang, and Peihong Zhang, *Giant narrow-band optical absorption and distinctive excitonic structures of monolayer C<sub>3</sub>N and C<sub>3</sub>B*, [Physical Review Applied **17**, 034068](https://doi.org/10.1103/PhysRevApplied.17.034068) (2022).
-<https://doi.org/10.1103/PhysRevApplied.17.034068>
-
----
-
-ZT
