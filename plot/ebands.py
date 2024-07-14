@@ -111,7 +111,7 @@ if lwrite :
         f4.write("\n")
     f4.close()
 
-colpal=["#34548a","#f7768e","#73daca","#cfc9c2","#ffffff","#1a1b26"] # blue, red, green, grey, white, black
+colpal=["#2959aa","#f7768e","#9ece6a","#c6c6c9","#ffffff","#1a1b26"] # blue, red, green, grey, white, black
 mpl.rcParams["font.sans-serif"].insert(0,"Noto Sans")
 mpl.rcParams.update({'font.size': 14})
 

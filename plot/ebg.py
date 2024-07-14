@@ -62,7 +62,7 @@ if ldipole :
     dip,ee,eg,eb=zip(*sorted_combined)
 
 # set figure styles
-colpal=["#34548a","#7aa2f7","#cfc9c2","#ffffff","#1a1b26"] # [blue, light blue, gray, white, black]
+colpal=["#2959aa","#7aa2f7","#c6c6c9","#ffffff","#1a1b26"] # [blue, light blue, gray, white, black]
 mpl.rcParams["font.sans-serif"].insert(0,"Noto Sans")
 mpl.rcParams['mathtext.fontset'] = 'custom'
 mpl.rcParams['mathtext.rm'] = 'Noto Sans'
@@ -91,6 +91,7 @@ if ldipole :
         for i in range(3) :
             colors0.append(int(word[i],16)/255)
         colors.append(colors0)
+    colors.reverse()
     x=[]
     for ix in range(len(colors)) :
         x.append(ix/(len(colors)-1))
@@ -100,9 +101,9 @@ if ldipole :
     cdict['green']=[]
     cdict['blue']=[]
     for ix in range(len(x)) :
-        cdict['red'].append([x[ix],colors[len(x)-ix-1][0],colors[len(x)-ix-1][0]])
-        cdict['green'].append([x[ix],colors[len(x)-ix-1][1],colors[len(x)-ix-1][1]])
-        cdict['blue'].append([x[ix],colors[len(x)-ix-1][2],colors[len(x)-ix-1][2]])
+        cdict['red'].append([x[ix],colors[ix][0],colors[ix][0]])
+        cdict['green'].append([x[ix],colors[ix][1],colors[ix][1]])
+        cdict['blue'].append([x[ix],colors[ix][2],colors[ix][2]])
 
     newcmp = mcolors.LinearSegmentedColormap('newcmp', segmentdata=cdict, N=1000)
     plt.register_cmap(cmap=newcmp)

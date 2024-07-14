@@ -1,6 +1,6 @@
 ## [ebg](ebg.f90)
 
-Find the non-interacting transition energy $E_\mathrm{g}^S$:
+Find the non-interacting transition energy:
 
 $$
 E_\mathrm{g}^S=\sum_{vck}((A_{vck}^S)^2(E_{ck}-E_{v(k+q)})).
@@ -12,8 +12,6 @@ $$
 \mathrm{IPR}^S=(\sum_{vck}(A_{vck}^S)^2)^2/\sum_{vck}(A_{vck}^S)^4.
 $$
 
----
-
 ## [pdeh](pdeh.f90)
 
 Calculate the e-h pair participation ratio of exciton states:
@@ -22,8 +20,6 @@ $$
 D_\mathrm{eh}^S(\omega)=\sum_{vck}(A_{vck}^S)^2\delta(E_{ck}-E_{vk}-\omega).
 $$
 
----
-
 ## [ewfn](ewfn.f90)
 
 Calculate the k-dependent pair amplitude of exciton states:
@@ -31,8 +27,6 @@ Calculate the k-dependent pair amplitude of exciton states:
 $$
 |A_k^S|^2=\sum_{vc}|A_{vck}^S|^2.
 $$
-
----
 
 ## [ebands](ebands.f90)
 
@@ -47,8 +41,6 @@ $$
 $$
 
 where k is on the band structure path.
-
----
 
 ## Input files
 [input](input)  
@@ -65,8 +57,6 @@ ehdos_\*.dat
 ebands_\*.dat  
 pdeh_\*.dat  
 
----
-
 ## Install
 
 Copy mkf.mk from the [config](config) directory. Modify as needed. Then 
@@ -74,10 +64,11 @@ Copy mkf.mk from the [config](config) directory. Modify as needed. Then
 make
 ```
 
----
-
 ## Reference
-Please find <https://doi.org/10.1103/PhysRevApplied.17.034068>
+
+Please find the following paper:
+Zhao Tang, Greis J. Cruz, Yabei Wu, Weiyi Xia, Fanhao Jia, Wenqing Zhang, and Peihong Zhang, *Giant narrow-band optical absorption and distinctive excitonic structures of monolayer C<sub>3</sub>N and C<sub>3</sub>B*, [Physical Review Applied **17**, 034068](https://doi.org/10.1103/PhysRevApplied.17.034068) (2022).
+<https://doi.org/10.1103/PhysRevApplied.17.034068>
 
 ---
 
